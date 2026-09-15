@@ -34,7 +34,7 @@ const Contact = () => {
     <PageLayout>
       <SEO
         title="Get a Free Painting Estimate in New England"
-        description="Contact Tony's Painting and Remodeling for a free estimate. Serving New England. Call 508 982 9675 or fill out the form."
+        description="Contact Tony's Painting and Remodeling for a free estimate. Serving MA, NH and RI, including Martha's Vineyard. Request your consultation."
         canonical="/contact"
         keywords="free painting estimate New England, painting quote New England, contact painters New England, hire painting contractor MA"
         schema={{
@@ -49,7 +49,9 @@ const Contact = () => {
             email: "Tonyspainting11@gmail.com",
             address: {
               "@type": "PostalAddress",
-              addressLocality: "New England",
+              streetAddress: "11 Cook Rd",
+              addressLocality: "Vineyard Haven",
+              postalCode: "02568",
               addressRegion: "MA",
               addressCountry: "US",
             },
@@ -158,7 +160,7 @@ const Contact = () => {
 
             <div className="mt-5 flex items-center gap-4">
               <a
-                href="https://instagram.com"
+                href="https://www.instagram.com/tonyspainting_remodeling/"
                 target="_blank"
                 rel="noreferrer"
                 aria-label="Instagram"
@@ -167,7 +169,7 @@ const Contact = () => {
                 <Instagram size={20} />
               </a>
               <a
-                href="https://facebook.com"
+                href="https://www.facebook.com/tonyspainting11"
                 target="_blank"
                 rel="noreferrer"
                 aria-label="Facebook"

@@ -3,26 +3,31 @@ import { Download, Share, PlusSquare } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
+interface InstallPromptEvent extends Event {
+  prompt(): Promise<void>;
+  userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
+}
+
 export default function InstallPWA() {
-  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [deferredPrompt, setDeferredPrompt] = useState<InstallPromptEvent | null>(null);
   const [isIOS, setIsIOS] = useState(false);
   const [isStandalone, setIsStandalone] = useState(false);
   const [showInstall, setShowInstall] = useState(false);
 
   useEffect(() => {
     const isStandaloneMode = window.matchMedia('(display-mode: standalone)').matches || 
-                           (window.navigator as any).standalone || 
+                           (window.navigator as Navigator & { standalone?: boolean }).standalone || 
                            document.referrer.includes('android-app://');
     
-    setIsStandalone(isStandaloneMode);
+    setIsStandalone(Boolean(isStandaloneMode));
 
     // Detect iOS
-    const isIOSDevice = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
+    const isIOSDevice = /iPad|iPhone|iPod/.test(navigator.userAgent) && !("MSStream" in window);
     setIsIOS(isIOSDevice);
 
-    const handleBeforeInstallPrompt = (e: any) => {
+    const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
-      setDeferredPrompt(e);
+      setDeferredPrompt(e as InstallPromptEvent);
       if (!isStandaloneMode) setShowInstall(true);
     };
 

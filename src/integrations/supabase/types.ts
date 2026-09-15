@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       appointments: {
         Row: {
+          source: string
           created_at: string | null
           id: string
           lead_id: string | null
@@ -25,6 +26,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          source?: string
           created_at?: string | null
           id?: string
           lead_id?: string | null
@@ -34,6 +36,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          source?: string
           created_at?: string | null
           id?: string
           lead_id?: string | null
@@ -233,6 +236,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      save_website_inquiry: { Args: { p_token: string; p_name: string; p_phone: string; p_details?: Json }; Returns: undefined }
       get_tomorrows_appointments: {
         Args: never
         Returns: {
@@ -376,3 +380,4 @@ export const Constants = {
     Enums: {},
   },
 } as const
+

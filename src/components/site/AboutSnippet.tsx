@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useReducedMotion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import FadeUpSection from "@/components/site/FadeUpSection";
 import otonielSantos from "@/assets/otoniel-santos-founder.png";
@@ -23,6 +24,8 @@ const FADE_MS = 700;
 const AboutPhotoSlideshow = () => {
   const [current, setCurrent] = useState(0);
   const [paused, setPaused] = useState(false);
+  const [autoPlay, setAutoPlay] = useState(true);
+  const reduce = useReducedMotion();
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const goTo = (index: number) => {
@@ -30,7 +33,7 @@ const AboutPhotoSlideshow = () => {
   };
 
   useEffect(() => {
-    if (paused) {
+    if (paused || !autoPlay || reduce) {
       if (timerRef.current) clearInterval(timerRef.current);
       return;
     }
@@ -40,12 +43,14 @@ const AboutPhotoSlideshow = () => {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [paused]);
+  }, [paused, autoPlay, reduce]);
 
   return (
     <div
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
+      onFocus={() => setPaused(true)}
+      onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) setPaused(false); }}
       className="flex flex-col items-center gap-[14px]"
     >
       {/* Stack de imagens: TODAS sempre no DOM, so opacity muda */}
@@ -63,6 +68,7 @@ const AboutPhotoSlideshow = () => {
             key={index}
             src={person.image}
             alt={person.name}
+            loading="lazy" aria-hidden={current !== index}
             style={{
               position: "absolute",
               inset: 0,
@@ -84,6 +90,7 @@ const AboutPhotoSlideshow = () => {
         {people.map((person, index) => (
           <div
             key={index}
+            aria-hidden={current !== index}
             style={{
               position: "absolute",
               inset: 0,
@@ -120,6 +127,7 @@ const AboutPhotoSlideshow = () => {
         ))}
       </div>
 
+      {!reduce && <button type="button" className="text-sm underline min-h-11" onClick={() => setAutoPlay((value) => !value)}>{autoPlay ? "Pause slideshow" : "Play slideshow"}</button>}
       {/* Dots */}
       <div className="flex gap-[8px] justify-center">
         {people.map((_, i) => (
@@ -127,6 +135,7 @@ const AboutPhotoSlideshow = () => {
             key={i}
             onClick={() => goTo(i)}
             aria-label={`Go to slide ${i + 1}`}
+            aria-pressed={current === i}
             style={{
               width: current === i ? "20px" : "6px",
               height: "6px",

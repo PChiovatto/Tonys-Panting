@@ -1,4 +1,4 @@
-// v5 - deps normalized
+import { hasServiceAuthorization, hasSharedSecret } from "../_shared/authorization.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -8,6 +8,12 @@ const corsHeaders = {
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
+  }
+
+  if (req.method !== "POST") return new Response("Method not allowed", { status: 405 });
+  if (!hasServiceAuthorization(req, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")) &&
+      !hasSharedSecret(req, "x-webhook-secret", Deno.env.get("LEAD_WEBHOOK_SECRET"))) {
+    return new Response("Unauthorized", { status: 401 });
   }
 
   try {
@@ -37,6 +43,7 @@ Deno.serve(async (req) => {
       }),
     });
 
+    if (!response.ok) throw new Error("Notification delivery failed");
     const result = await response.json();
 
     return new Response(JSON.stringify({ ok: true, result }), {

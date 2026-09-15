@@ -133,6 +133,7 @@ const AnalyticsTab = ({ leads }: Props) => {
 
   const last6Months = Array.from({ length: 6 }, (_, i) => {
     const d = new Date();
+    d.setDate(1);
     d.setMonth(d.getMonth() - (5 - i));
     return {
       month: d.toLocaleString("en-US", { month: "short", year: "2-digit" }),

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 type Review = {
   id: string;
@@ -58,15 +59,19 @@ export function ReviewsSection() {
   const [hoverStar, setHoverStar] = useState(0);
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
   const [hp, setHp] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
 
   async function load() {
-    const { data } = await supabase
+    try {
+    const { data, error } = await supabase
       .from("reviews")
       .select("*")
       .eq("approved", true)
       .order("created_at", { ascending: false });
+    if (error) throw error;
     setReviews((data as Review[]) || []);
-    setLoading(false);
+    } catch { toast.error("Unable to load reviews. Please try again later."); }
+    finally { setLoading(false); }
   }
 
   useEffect(() => {
@@ -79,25 +84,28 @@ export function ReviewsSection() {
   );
 
   async function submit() {
-    if (hp) return;
+    if (hp || status === "sending") return;
     if (!form.name.trim() || form.rating < 1) {
       setStatus("error");
+      setErrorMessage("Please add your name and a star rating.");
       return;
     }
     setStatus("sending");
+    try {
     const { error } = await supabase.from("reviews").insert({
       name: form.name.trim(),
       rating: form.rating,
       comment: form.comment.trim() || null,
       source: "website",
     });
-    if (error) {
-      setStatus("error");
-      return;
-    }
+    if (error) throw error;
     setForm({ name: "", rating: 0, comment: "" });
     await load();
     setStatus("sent");
+    } catch {
+      setStatus("error");
+      setErrorMessage("Your review could not be saved. Please try again.");
+    }
   }
 
   return (
@@ -162,6 +170,7 @@ export function ReviewsSection() {
                       key={n}
                       type="button"
                       aria-label={`${n} star${n > 1 ? "s" : ""}`}
+                      aria-pressed={form.rating === n}
                       onMouseEnter={() => setHoverStar(n)}
                       onClick={() => setForm({ ...form, rating: n })}
                       className="transition-transform hover:scale-110"
@@ -173,6 +182,7 @@ export function ReviewsSection() {
               </div>
               <input
                 value={form.name}
+                aria-label="Your name"
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
                 placeholder="Your name"
                 maxLength={100}
@@ -180,6 +190,7 @@ export function ReviewsSection() {
               />
               <textarea
                 value={form.comment}
+                aria-label="Your experience"
                 onChange={(e) => setForm({ ...form, comment: e.target.value })}
                 placeholder="Tell us about your experience"
                 rows={4}
@@ -195,7 +206,7 @@ export function ReviewsSection() {
                 aria-hidden="true"
               />
               {status === "error" && (
-                <p className="text-sm text-primary">Please add your name and a star rating.</p>
+                <p role="alert" className="text-sm text-primary">{errorMessage}</p>
               )}
               <button
                 onClick={submit}

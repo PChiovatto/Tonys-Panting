@@ -512,7 +512,7 @@ img {
 =========================== */
 
 @media (min-width: 768px) and (max-width: 1023px) {
-  .video-section-container {
+  .video-showcase-container {
     flex-direction: column !important;
     align-items: center !important;
     padding: 60px 40px !important;
@@ -522,7 +522,7 @@ img {
     text-align: center !important;
     align-items: center !important;
   }
-  .video-panel {
+  .video-visual-panel {
     width: 280px !important;
   }
 }
@@ -655,3 +655,18 @@ img {
   }
 }
 
+
+/* Consistent keyboard focus, including controls styled inline. */
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 3px solid #c4291c !important;
+  outline-offset: 3px;
+}
+:where(input, select, textarea, main, [id]) { scroll-margin-top: 100px; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

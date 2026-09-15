@@ -399,7 +399,7 @@ const LandingTemplate = ({
           className="text-center"
           style={{ color: "#6B6560", fontSize: "11px", padding: "16px 0" }}
         >
-          Copyright 2024, Tony&apos;s Painting. All Rights Reserved.
+          Copyright {new Date().getFullYear()}, Tony&apos;s Painting. All Rights Reserved.
         </p>
       </footer>
     </div>

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { toast } from "sonner";
 import {
   requestNotificationPermission,
   subscribeUserToPush,
@@ -20,8 +21,8 @@ const NotificationBanner = ({ userId }: Props) => {
   const handleEnable = async () => {
     const granted = await requestNotificationPermission();
     if (granted) {
-      await subscribeUserToPush(userId);
-      setVisible(false);
+      if (await subscribeUserToPush(userId)) setVisible(false);
+      else toast.error("Notifications could not be enabled. Please try again.");
     }
   };
 

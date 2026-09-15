@@ -17,11 +17,13 @@ const LoginPage = () => {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    if (loading) return;
     setLoading(true);
     setError(null);
 
+    try {
     const { error: signInError } = await supabase.auth.signInWithPassword({
-      email,
+      email: email.trim(),
       password,
     });
 
@@ -31,6 +33,11 @@ const LoginPage = () => {
       return;
     }
     navigate("/dashboard", { replace: true });
+    } catch {
+      setError("Unable to connect. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const inputStyle: React.CSSProperties = {
@@ -125,7 +132,7 @@ const LoginPage = () => {
               marginTop: 4,
             }}
           >
-            2024 Tony&apos;s Painting
+            {new Date().getFullYear()} Tony&apos;s Painting
           </p>
         </div>
       </aside>
@@ -204,6 +211,7 @@ const LoginPage = () => {
 
           {error && (
             <div
+              role="alert"
               style={{
                 fontFamily: "'Montserrat', sans-serif",
                 fontWeight: 400,

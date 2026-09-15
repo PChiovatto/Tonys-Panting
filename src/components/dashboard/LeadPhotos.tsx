@@ -1,4 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import { toast } from "sonner";
+import { useDialogFocus } from "@/hooks/useDialogFocus";
 import { Download, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -25,19 +28,26 @@ const LeadPhotos = ({ leadId }: Props) => {
   const [photos, setPhotos] = useState<SignedPhoto[]>([]);
   const [loading, setLoading] = useState(true);
   const [lightboxIdx, setLightboxIdx] = useState<number | null>(null);
+  const [error, setError] = useState(false);
+  const [attempt, setAttempt] = useState(0);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useDialogFocus(lightboxIdx !== null && photos.length > 0, dialogRef, () => setLightboxIdx(null));
 
   useEffect(() => {
     let cancelled = false;
 
     const load = async () => {
       setLoading(true);
+      setError(false);
+      try {
       const { data: rows, error } = await supabase
         .from("project_photos")
         .select("id,file_path,file_name,file_type,file_size")
         .eq("lead_id", leadId)
         .order("uploaded_at", { ascending: true });
 
-      if (error || !rows || rows.length === 0) {
+      if (error) throw error;
+      if (!rows || rows.length === 0) {
         if (!cancelled) {
           setPhotos([]);
           setLoading(false);
@@ -46,9 +56,12 @@ const LeadPhotos = ({ leadId }: Props) => {
       }
 
       const paths = rows.map((r) => r.file_path);
-      const { data: signed } = await supabase.storage
+      const { data: signed, error: signingError } = await supabase.storage
         .from(BUCKET)
         .createSignedUrls(paths, SIGNED_URL_TTL);
+      if (signingError || signed?.some((item) => item.error) || !signed) {
+        throw signingError ?? new Error("Unable to access photos");
+      }
 
       const byPath = new Map<string, string>();
       (signed || []).forEach((s) => {
@@ -62,17 +75,21 @@ const LeadPhotos = ({ leadId }: Props) => {
           .filter((p) => p.url),
       );
       setLoading(false);
+      } catch {
+        if (!cancelled) { setError(true); setLoading(false); }
+      }
     };
 
-    load();
+    void load();
     return () => {
       cancelled = true;
     };
-  }, [leadId]);
+  }, [leadId, attempt]);
 
   const download = async (photo: SignedPhoto) => {
     try {
       const res = await fetch(photo.url);
+      if (!res.ok) throw new Error("Download failed");
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -83,7 +100,7 @@ const LeadPhotos = ({ leadId }: Props) => {
       a.remove();
       URL.revokeObjectURL(url);
     } catch {
-      window.open(photo.url, "_blank");
+      toast.error("Photo could not be downloaded. Refresh the photos and try again.");
     }
   };
 
@@ -102,6 +119,7 @@ const LeadPhotos = ({ leadId }: Props) => {
     );
   }
 
+  if (error) return <div role="alert" className="p-4 text-sm">Unable to load project photos. <button className="underline" onClick={() => setAttempt((value) => value + 1)}>Retry</button></div>;
   if (photos.length === 0) return null;
 
   const active = lightboxIdx !== null ? photos[lightboxIdx] : null;
@@ -151,8 +169,12 @@ const LeadPhotos = ({ leadId }: Props) => {
         ))}
       </div>
 
-      {active && (
+      {active && createPortal(
         <div
+          ref={dialogRef}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Project photos"
           onClick={() => setLightboxIdx(null)}
           style={{
             position: "fixed",
@@ -284,7 +306,7 @@ const LeadPhotos = ({ leadId }: Props) => {
               </button>
             </div>
           )}
-        </div>
+        </div>, document.body
       )}
     </div>
   );

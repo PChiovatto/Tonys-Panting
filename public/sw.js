@@ -9,9 +9,9 @@ self.addEventListener('activate', e => {
   )
 })
 
-self.addEventListener('message', async e => {
+self.addEventListener('message', e => {
   if (e.data?.type === 'CLEAR_BADGE' || e.data?.type === 'APP_FOCUSED') {
-    await clearBadgeNow()
+    e.waitUntil(clearBadgeNow())
   }
 })
 
@@ -37,11 +37,12 @@ async function clearBadgeNow() {
   } catch(e) {}
 }
 
-self.addEventListener('push', async e => {
-  const data = e.data?.json() || {}
+self.addEventListener('push', e => {
+  let data = {}
+  try { data = e.data?.json() || {} } catch { /* Use the default notification for invalid payloads. */ }
   const title = data.title || "Tony's Painting"
   const body = data.body || 'New lead received.'
-  const count = data.count || 1
+  const count = Number.isFinite(data.count) ? Math.max(0, data.count) : 1
 
   e.waitUntil(
     Promise.all([
@@ -51,7 +52,7 @@ self.addEventListener('push', async e => {
         icon: '/favicon.ico',
         badge: '/favicon.ico',
         vibrate: [200, 100, 200],
-        tag: 'new-lead',
+        tag: data.type === 'reminder' ? 'appointment-reminder' : 'new-lead',
         renotify: true,
         data: { url: '/dashboard', count }
       }),

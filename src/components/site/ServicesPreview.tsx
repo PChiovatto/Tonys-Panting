@@ -38,7 +38,7 @@ const services = [
     href: '/services/deck-stairs',
     image: '/images/project-07.jpg',
   },
-];
+].sort((a, b) => a.name.localeCompare(b.name, "en"));
 
 const ServiceCard = ({ service }: { service: typeof services[number] }) => (
   <article className="service-image-card">

@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
-import { supabase } from "@/integrations/supabase/client";
+import { submitLead, validateContactDetails } from "@/lib/leadSubmission";
 
 type FormState = {
   fullName: string;
@@ -36,27 +36,23 @@ const LPMiniForm = ({ service, idPrefix = "lpmini" }: LPMiniFormProps) => {
   };
 
   const validate = (): Errors => {
-    const next: Errors = {};
-    if (!formData.fullName.trim()) next.fullName = "This field is required.";
-    if (!formData.phone.trim()) next.phone = "This field is required.";
-    if (!formData.email.trim()) {
-      next.email = "This field is required.";
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) {
-      next.email = "Please enter a valid email.";
-    }
+    const next: Errors = validateContactDetails(formData);
     return next;
   };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    console.log('Supabase URL:', import.meta.env.VITE_SUPABASE_URL ? 'present' : 'MISSING');
-    console.log('Supabase Key:', import.meta.env.VITE_SUPABASE_ANON_KEY ? 'present' : 'MISSING');
+    if (submitting) return;
     const v = validate();
     setErrors(v);
-    if (Object.keys(v).length > 0) return;
+    if (Object.keys(v).length > 0) {
+      const form = e.currentTarget as HTMLFormElement;
+      requestAnimationFrame(() => form.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus());
+      return;
+    }
 
     setSubmitting(true);
-    const { error } = await supabase.from("leads").insert({
+    const { error } = await submitLead({
       name: formData.fullName,
       phone: formData.phone,
       email: formData.email,
@@ -67,8 +63,6 @@ const LPMiniForm = ({ service, idPrefix = "lpmini" }: LPMiniFormProps) => {
     setSubmitting(false);
 
     if (error) {
-      console.error('Supabase insert error:', error);
-      console.error('Error details:', JSON.stringify(error, null, 2));
       toast({
         title: "Something went wrong",
         description: "Please try again or call us directly.",
@@ -82,7 +76,7 @@ const LPMiniForm = ({ service, idPrefix = "lpmini" }: LPMiniFormProps) => {
   const inputCls = (k: keyof FormState) =>
     cn("mt-2 rounded-sm bg-background", errors[k] && "border-destructive focus-visible:ring-destructive");
   const errMsg = (k: keyof FormState) =>
-    errors[k] ? <p className="text-sm text-destructive mt-1">{errors[k]}</p> : null;
+    errors[k] ? <p id={`${idPrefix}-${k}-error`} role="alert" className="text-sm text-destructive mt-1">{errors[k]}</p> : null;
 
   return (
     <form onSubmit={handleSubmit} noValidate className="w-full max-w-[480px] mx-auto space-y-4">
@@ -90,9 +84,12 @@ const LPMiniForm = ({ service, idPrefix = "lpmini" }: LPMiniFormProps) => {
         <Label htmlFor={`${idPrefix}-name`} className="text-background">Full Name</Label>
         <Input
           id={`${idPrefix}-name`}
+          autoComplete="name"
+          maxLength={120}
           value={formData.fullName}
           onChange={(e) => setField("fullName", e.target.value)}
           aria-invalid={!!errors.fullName}
+          aria-describedby={errors.fullName ? `${idPrefix}-fullName-error` : undefined}
           className={inputCls("fullName")}
         />
         {errMsg("fullName")}
@@ -102,9 +99,12 @@ const LPMiniForm = ({ service, idPrefix = "lpmini" }: LPMiniFormProps) => {
         <Input
           id={`${idPrefix}-phone`}
           type="tel"
+          autoComplete="tel"
+          maxLength={30}
           value={formData.phone}
           onChange={(e) => setField("phone", e.target.value)}
           aria-invalid={!!errors.phone}
+          aria-describedby={errors.phone ? `${idPrefix}-phone-error` : undefined}
           className={inputCls("phone")}
         />
         {errMsg("phone")}
@@ -114,9 +114,12 @@ const LPMiniForm = ({ service, idPrefix = "lpmini" }: LPMiniFormProps) => {
         <Input
           id={`${idPrefix}-email`}
           type="email"
+          autoComplete="email"
+          maxLength={254}
           value={formData.email}
           onChange={(e) => setField("email", e.target.value)}
           aria-invalid={!!errors.email}
+          aria-describedby={errors.email ? `${idPrefix}-email-error` : undefined}
           className={inputCls("email")}
         />
         {errMsg("email")}

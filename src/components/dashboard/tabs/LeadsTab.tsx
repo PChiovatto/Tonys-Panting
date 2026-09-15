@@ -1,8 +1,10 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
+import { toast } from "sonner";
+import { newYorkTimeToISO } from "@/lib/calendarTime";
+import { useDialogFocus } from "@/hooks/useDialogFocus";
 import { Phone, Mail, Trash2 } from "lucide-react";
 import type { Lead, LeadStatus } from "@/types/lead";
 import { getStatusBadge } from "@/types/lead";
-import { supabase } from "@/integrations/supabase/client";
 import LeadPhotos from "../LeadPhotos";
 
 const TAG_TYPE_LABELS: Record<string, string> = {
@@ -31,8 +33,8 @@ const prettyLabel = (map: Record<string, string>, v?: string | null) =>
 
 interface Props {
   leads: Lead[];
-  updateLead: (id: string, updates: Partial<Lead>) => Promise<void>;
-  deleteLead: (id: string) => Promise<void>;
+  updateLead: (id: string, updates: Partial<Lead>) => Promise<boolean>;
+  deleteLead: (id: string) => Promise<boolean>;
 }
 
 const STATUSES: LeadStatus[] = [
@@ -52,40 +54,48 @@ const LeadCard = ({
   onScheduleNeeded,
 }: {
   lead: Lead;
-  updateLead: (id: string, updates: Partial<Lead>) => Promise<void>;
-  deleteLead: (id: string) => Promise<void>;
+  updateLead: (id: string, updates: Partial<Lead>) => Promise<boolean>;
+  deleteLead: (id: string) => Promise<boolean>;
   onScheduleNeeded: (lead: Lead) => void;
 }) => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [noteValue, setNoteValue] = useState(lead.notes || "");
   const [editingNote, setEditingNote] = useState(false);
   const [noteSaved, setNoteSaved] = useState(false);
+  const [savingNote, setSavingNote] = useState(false);
+  const noteTimer = useRef<ReturnType<typeof setTimeout>>();
+  useEffect(() => { if (!editingNote) setNoteValue(lead.notes || ""); }, [lead.notes, editingNote]);
+  useEffect(() => () => clearTimeout(noteTimer.current), []);
   const [messageExpanded, setMessageExpanded] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [removing, setRemoving] = useState(false);
   const badge = getStatusBadge(lead.status);
 
-  const handleStatusChange = (newStatus: LeadStatus) => {
+  const handleStatusChange = async (newStatus: LeadStatus) => {
     setDropdownOpen(false);
-    updateLead(lead.id, { status: newStatus });
     if (newStatus === "scheduled") {
       onScheduleNeeded({ ...lead, status: newStatus });
+      return;
     }
+    await updateLead(lead.id, { status: newStatus });
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     setRemoving(true);
     setConfirming(false);
-    setTimeout(() => {
-      deleteLead(lead.id);
-    }, 300);
+    if (!await deleteLead(lead.id)) setRemoving(false);
   };
 
   const saveNote = async () => {
-    await supabase.from("leads").update({ notes: noteValue }).eq("id", lead.id);
+    if (savingNote) return;
+    setSavingNote(true);
+    const saved = await updateLead(lead.id, { notes: noteValue });
+    setSavingNote(false);
+    if (!saved) return;
     setEditingNote(false);
     setNoteSaved(true);
-    setTimeout(() => setNoteSaved(false), 2000);
+    clearTimeout(noteTimer.current);
+    noteTimer.current = setTimeout(() => setNoteSaved(false), 2000);
   };
 
   return (
@@ -556,6 +566,8 @@ const LeadCard = ({
           <div>
             <textarea
               value={noteValue}
+              aria-label={`Notes for ${lead.name}`}
+              disabled={savingNote}
               onChange={(e) => setNoteValue(e.target.value)}
               autoFocus
               rows={3}
@@ -602,6 +614,7 @@ const LeadCard = ({
                 Cancel
               </button>
               <button
+                disabled={savingNote}
                 onClick={saveNote}
                 style={{
                   background: "#1A1A1A",
@@ -770,16 +783,23 @@ const ScheduleModal = ({
 }: {
   lead: Lead;
   onClose: () => void;
-  updateLead: (id: string, updates: Partial<Lead>) => Promise<void>;
+  updateLead: (id: string, updates: Partial<Lead>) => Promise<boolean>;
 }) => {
   const [date, setDate] = useState("");
   const [time, setTime] = useState("");
+  const [saving, setSaving] = useState(false);
+  const modalRef = useRef<HTMLDivElement>(null);
+  useDialogFocus(true, modalRef, onClose);
 
   const save = async () => {
-    if (!date || !time) return;
-    const dt = new Date(`${date}T${time}`).toISOString();
-    await updateLead(lead.id, { scheduled_at: dt });
-    onClose();
+    if (!date || !time || saving) return;
+    setSaving(true);
+    try {
+      const dt = newYorkTimeToISO(date, time);
+      if (await updateLead(lead.id, { scheduled_at: dt, status: "scheduled" })) onClose();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Unable to schedule appointment.");
+    } finally { setSaving(false); }
   };
 
   return (
@@ -809,7 +829,7 @@ const ScheduleModal = ({
         }
       `}</style>
       <div className="schedule-modal-wrap" style={{ display: "contents" }} />
-      <div className="schedule-modal" onClick={(e) => e.stopPropagation()}>
+      <div ref={modalRef} role="dialog" aria-modal="true" aria-label="Schedule appointment" className="schedule-modal" onClick={(e) => e.stopPropagation()}>
         <h3
           style={{
             fontFamily: "'Montserrat', sans-serif",
@@ -824,6 +844,7 @@ const ScheduleModal = ({
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           <input
             type="date"
+            aria-label="Appointment date"
             value={date}
             onChange={(e) => setDate(e.target.value)}
             style={{
@@ -836,6 +857,7 @@ const ScheduleModal = ({
           />
           <input
             type="time"
+            aria-label="Appointment time in New York"
             value={time}
             onChange={(e) => setTime(e.target.value)}
             style={{
@@ -864,6 +886,7 @@ const ScheduleModal = ({
             </button>
             <button
               onClick={save}
+              disabled={saving || !date || !time}
               style={{
                 flex: 1,
                 padding: "10px",
@@ -877,7 +900,7 @@ const ScheduleModal = ({
                 cursor: "pointer",
               }}
             >
-              Save
+              {saving ? "Saving…" : "Save (New York time)"}
             </button>
           </div>
         </div>
@@ -1030,6 +1053,7 @@ const LeadsTab = ({ leads, updateLead, deleteLead }: Props) => {
         </div>
         <input
           className="leads-search"
+          aria-label="Search leads by name, email or phone"
           type="text"
           placeholder="Search by name, email or phone..."
           value={search}

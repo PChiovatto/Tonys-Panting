@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useCallback, useEffect, useState, useRef, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { X, ChevronLeft, ChevronRight } from "lucide-react";
 import SEO from "@/components/SEO";
@@ -7,6 +7,7 @@ import InnerHero from "@/components/site/InnerHero";
 import FadeUpSection from "@/components/site/FadeUpSection";
 import RippleButton from "@/components/site/RippleButton";
 import { cn } from "@/lib/utils";
+import { useDialogFocus } from "@/hooks/useDialogFocus";
 
 type Category = "All Projects" | "Interior" | "Exterior" | "Remodeling" | "Commercial";
 
@@ -50,10 +51,10 @@ const Portfolio = () => {
   const [activeSlide, setActiveSlide] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  const filtered =
+  const filtered = useMemo(() =>
     activeFilter === "All Projects"
       ? PROJECTS
-      : PROJECTS.filter((p) => p.category === activeFilter);
+      : PROJECTS.filter((p) => p.category === activeFilter), [activeFilter]);
   const mobileSliderPages: Project[][] = [];
   for (let i = 0; i < filtered.length; i += 4) {
     mobileSliderPages.push(filtered.slice(i, i + 4));
@@ -63,16 +64,18 @@ const Portfolio = () => {
   const currentProject = lightboxIndex >= 0 ? filtered[lightboxIndex] : null;
 
   const closeLightbox = () => setLightboxId(null);
-  const showPrev = () => {
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useDialogFocus(Boolean(currentProject), dialogRef, closeLightbox);
+  const showPrev = useCallback(() => {
     if (lightboxIndex < 0) return;
     const next = (lightboxIndex - 1 + filtered.length) % filtered.length;
     setLightboxId(filtered[next].id);
-  };
-  const showNext = () => {
+  }, [lightboxIndex, filtered]);
+  const showNext = useCallback(() => {
     if (lightboxIndex < 0) return;
     const next = (lightboxIndex + 1) % filtered.length;
     setLightboxId(filtered[next].id);
-  };
+  }, [lightboxIndex, filtered]);
 
   useEffect(() => {
     if (lightboxId == null) return;
@@ -82,12 +85,10 @@ const Portfolio = () => {
       if (e.key === "ArrowRight") showNext();
     };
     window.addEventListener("keydown", onKey);
-    document.body.style.overflow = "hidden";
     return () => {
       window.removeEventListener("keydown", onKey);
-      document.body.style.overflow = "";
     };
-  }, [lightboxId, activeFilter]);
+  }, [lightboxId, showPrev, showNext]);
 
   useEffect(() => {
     const el = scrollRef.current;
@@ -131,6 +132,7 @@ const Portfolio = () => {
                 <button
                   key={f}
                   onClick={() => setActiveFilter(f)}
+                  aria-pressed={active}
                   className={cn(
                     "shrink-0 px-5 py-2 text-sm font-medium border rounded-full transition-colors whitespace-nowrap",
                     active
@@ -149,6 +151,7 @@ const Portfolio = () => {
       {/* Gallery */}
       <section className="bg-background">
         <div className="container py-12 md:py-16">
+          {filtered.length === 0 && <p role="status" className="text-center text-muted-foreground">No projects in this category yet. Please explore our other work.</p>}
           {/* Desktop Grid */}
           <div className="hidden md:grid grid-cols-2 lg:grid-cols-3 gap-6">
             {filtered.map((p, i) => (
@@ -264,6 +267,8 @@ const Portfolio = () => {
           onClick={closeLightbox}
           role="dialog"
           aria-modal="true"
+          aria-label={currentProject.title}
+          ref={dialogRef}
         >
           <button
             onClick={closeLightbox}

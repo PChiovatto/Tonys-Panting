@@ -28,8 +28,10 @@ export async function requestNotificationPermission(): Promise<boolean> {
 }
 
 export async function subscribeUserToPush(userId: string) {
-  if (!("serviceWorker" in navigator) || !("PushManager" in window)) return;
+  if (!("serviceWorker" in navigator) || !("PushManager" in window)) return false;
   try {
+    const registered = await registerServiceWorker();
+    if (!registered) return false;
     const sw = await navigator.serviceWorker.ready;
     let subscription = await sw.pushManager.getSubscription();
     if (!subscription) {
@@ -42,8 +44,8 @@ export async function subscribeUserToPush(userId: string) {
       endpoint?: string;
       keys?: { p256dh?: string; auth?: string };
     };
-    if (!json.endpoint || !json.keys?.p256dh || !json.keys?.auth) return;
-    await supabase.from("push_subscriptions").upsert(
+    if (!json.endpoint || !json.keys?.p256dh || !json.keys?.auth) return false;
+    const { error } = await supabase.from("push_subscriptions").upsert(
       {
         user_id: userId,
         endpoint: json.endpoint,
@@ -52,15 +54,19 @@ export async function subscribeUserToPush(userId: string) {
       },
       { onConflict: "endpoint" }
     );
+    if (error) throw error;
+    return true;
   } catch (err) {
     console.error("Push subscription failed", err);
+    return false;
   }
 }
 
 export async function unsubscribeFromPush() {
   if (!("serviceWorker" in navigator)) return;
   try {
-    const sw = await navigator.serviceWorker.ready;
+    const sw = await navigator.serviceWorker.getRegistration();
+    if (!sw) return;
     const subscription = await sw.pushManager.getSubscription();
     if (subscription) {
       await supabase

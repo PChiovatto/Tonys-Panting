@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useCountUp } from "@/hooks/useCountUp";
+import { useReducedMotion } from "framer-motion";
 
 const trustItems = [
   { number: "20+", label: "Years Experience" },
@@ -35,17 +36,21 @@ const TrustBar = () => {
   // Mobile slider state
   const [activeItem, setActiveItem] = useState(0);
   const [slideVisible, setSlideVisible] = useState(true);
+  const [paused, setPaused] = useState(false);
+  const reduce = useReducedMotion();
 
   useEffect(() => {
+    if (paused || reduce) { setSlideVisible(true); return; }
+    let transitionTimer: ReturnType<typeof setTimeout>;
     const interval = setInterval(() => {
       setSlideVisible(false);
-      setTimeout(() => {
+      transitionTimer = setTimeout(() => {
         setActiveItem((prev) => (prev + 1) % trustItems.length);
         setSlideVisible(true);
       }, 400);
     }, 2000);
-    return () => clearInterval(interval);
-  }, []);
+    return () => { clearInterval(interval); clearTimeout(transitionTimer); };
+  }, [paused, reduce]);
 
   return (
     <section className="bg-stone border-y border-border" ref={ref}>
@@ -98,7 +103,8 @@ const TrustBar = () => {
 
         <div className="flex items-center justify-center gap-2 mt-2">
           {trustItems.map((_, i) => (
-            <span
+            <button type="button" onClick={() => { setActiveItem(i); setPaused(true); }}
+              aria-label={trustItems[i].label} aria-pressed={activeItem === i}
               key={i}
               className="rounded-full transition-all duration-300"
               style={{
@@ -110,6 +116,7 @@ const TrustBar = () => {
             />
           ))}
         </div>
+        {!reduce && <button type="button" className="text-sm underline min-h-11" onClick={() => setPaused((value) => !value)}>{paused ? "Play highlights" : "Pause highlights"}</button>}
       </div>
     </section>
   );

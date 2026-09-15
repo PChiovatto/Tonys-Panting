@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
-import { supabase } from "@/integrations/supabase/client";
+import { submitLead, validateContactDetails } from "@/lib/leadSubmission";
 
 type FormState = {
   fullName: string;
@@ -41,27 +41,23 @@ const LPForm = ({ service }: LPFormProps) => {
   };
 
   const validate = (): Errors => {
-    const next: Errors = {};
-    if (!formData.fullName.trim()) next.fullName = "This field is required.";
-    if (!formData.phone.trim()) next.phone = "This field is required.";
-    if (!formData.email.trim()) {
-      next.email = "This field is required.";
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) {
-      next.email = "Please enter a valid email.";
-    }
+    const next: Errors = validateContactDetails(formData);
     return next;
   };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    console.log('Supabase URL:', import.meta.env.VITE_SUPABASE_URL ? 'present' : 'MISSING');
-    console.log('Supabase Key:', import.meta.env.VITE_SUPABASE_ANON_KEY ? 'present' : 'MISSING');
+    if (submitting) return;
     const v = validate();
     setErrors(v);
-    if (Object.keys(v).length > 0) return;
+    if (Object.keys(v).length > 0) {
+      const form = e.currentTarget as HTMLFormElement;
+      requestAnimationFrame(() => form.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus());
+      return;
+    }
 
     setSubmitting(true);
-    const { error } = await supabase.from("leads").insert({
+    const { error } = await submitLead({
       name: formData.fullName,
       phone: formData.phone,
       email: formData.email,
@@ -73,8 +69,6 @@ const LPForm = ({ service }: LPFormProps) => {
     setSubmitting(false);
 
     if (error) {
-      console.error('Supabase insert error:', error);
-      console.error('Error details:', JSON.stringify(error, null, 2));
       toast({
         title: "Something went wrong",
         description: "Please try again or call us directly.",
@@ -86,7 +80,7 @@ const LPForm = ({ service }: LPFormProps) => {
   };
 
   const errMsg = (k: keyof FormState) =>
-    errors[k] ? <p className="text-sm text-destructive mt-1">{errors[k]}</p> : null;
+    errors[k] ? <p id={`lp-${k}-error`} role="alert" className="text-sm text-destructive mt-1">{errors[k]}</p> : null;
 
   const inputCls = (k: keyof FormState) =>
     cn("mt-2 rounded-sm", errors[k] && "border-destructive focus-visible:ring-destructive");
@@ -108,9 +102,12 @@ const LPForm = ({ service }: LPFormProps) => {
           <Label htmlFor="lp-fullName">Full Name</Label>
           <Input
             id="lp-fullName"
-            value={formData.fullName}
+            autoComplete="name"
+          maxLength={120}
+          value={formData.fullName}
             onChange={(e) => setField("fullName", e.target.value)}
             aria-invalid={!!errors.fullName}
+          aria-describedby={errors.fullName ? `lp-fullName-error` : undefined}
             className={inputCls("fullName")}
           />
           {errMsg("fullName")}
@@ -121,9 +118,12 @@ const LPForm = ({ service }: LPFormProps) => {
           <Input
             id="lp-phone"
             type="tel"
-            value={formData.phone}
+            autoComplete="tel"
+          maxLength={30}
+          value={formData.phone}
             onChange={(e) => setField("phone", e.target.value)}
             aria-invalid={!!errors.phone}
+          aria-describedby={errors.phone ? `lp-phone-error` : undefined}
             className={inputCls("phone")}
           />
           {errMsg("phone")}
@@ -134,9 +134,12 @@ const LPForm = ({ service }: LPFormProps) => {
           <Input
             id="lp-email"
             type="email"
-            value={formData.email}
+            autoComplete="email"
+          maxLength={254}
+          value={formData.email}
             onChange={(e) => setField("email", e.target.value)}
             aria-invalid={!!errors.email}
+          aria-describedby={errors.email ? `lp-email-error` : undefined}
             className={inputCls("email")}
           />
           {errMsg("email")}
@@ -160,7 +163,8 @@ const LPForm = ({ service }: LPFormProps) => {
           <Textarea
             id="lp-project"
             rows={3}
-            value={formData.project}
+            maxLength={5000}
+          value={formData.project}
             onChange={(e) => setField("project", e.target.value)}
             className="mt-2 rounded-sm"
           />

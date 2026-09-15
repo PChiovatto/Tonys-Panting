@@ -23,7 +23,7 @@ const Footer = () => {
             />
           </a>
           <p className="mt-4 text-sm text-background/60 max-w-xs leading-relaxed">
-            Premium painting and remodeling, serving New England since 2004.
+            Premium painting and remodeling in Massachusetts, New Hampshire and Rhode Island, including Martha's Vineyard, since 2004.
           </p>
           <div className="mt-6 flex items-center gap-3">
             <a

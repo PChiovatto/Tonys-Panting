@@ -1,7 +1,6 @@
-// v2 - redeployed
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import webpush from 'npm:web-push'
+import { hasServiceAuthorization, hasSharedSecret } from "../_shared/authorization.ts";
+import { createClient } from 'npm:@supabase/supabase-js@2.116.0'
+import webpush from 'npm:web-push@3.6.7'
 
 const supabaseAdmin = createClient(
   Deno.env.get('SUPABASE_URL')!,
@@ -9,9 +8,9 @@ const supabaseAdmin = createClient(
 )
 
 // Secret key simples para autenticar o cron job
-const CRON_SECRET = Deno.env.get('CRON_SECRET') || 'tonys-reminder-2026'
+const CRON_SECRET = Deno.env.get('CRON_SECRET')
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-cron-secret',
@@ -22,11 +21,9 @@ serve(async (req) => {
   }
 
   // Verificar autenticacao: aceita tanto service role quanto cron secret
-  const authHeader = req.headers.get('Authorization') || ''
-  const cronSecret = req.headers.get('x-cron-secret') || ''
-
-  const isServiceRole = authHeader.includes(Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '')
-  const isCronSecret = cronSecret === CRON_SECRET
+  if (req.method !== 'POST') return new Response('Method not allowed', { status: 405 })
+  const isServiceRole = hasServiceAuthorization(req, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'))
+  const isCronSecret = hasSharedSecret(req, 'x-cron-secret', CRON_SECRET)
 
   if (!isServiceRole && !isCronSecret) {
     return new Response(
@@ -43,8 +40,10 @@ serve(async (req) => {
     )
 
     // Buscar appointments de amanha em horario New York
-    const { data: appointments } = await supabaseAdmin
+    const { data: appointments, error: appointmentsError } = await supabaseAdmin
       .rpc('get_tomorrows_appointments')
+
+    if (appointmentsError) throw appointmentsError
 
     if (!appointments || appointments.length === 0) {
       return new Response(
@@ -54,9 +53,11 @@ serve(async (req) => {
     }
 
     // Buscar todas as subscriptions
-    const { data: subscriptions } = await supabaseAdmin
+    const { data: subscriptions, error: subscriptionsError } = await supabaseAdmin
       .from('push_subscriptions')
       .select('*')
+
+    if (subscriptionsError) throw subscriptionsError
 
     if (!subscriptions || subscriptions.length === 0) {
       return new Response(
@@ -95,7 +96,7 @@ serve(async (req) => {
       notifBody = parts.join(' · ')
     } else {
       notifTitle = `Tomorrow: ${appointments.length} Appointments`
-      const lines = appointments.map((a: any) => {
+      const lines = appointments.map((a: { lead_name: string | null; scheduled_at: string; title: string }) => {
         const lead = a.lead_name ? ` · ${a.lead_name}` : ''
         return `${formatTime(a.scheduled_at)} ET · ${a.title}${lead}`
       })
@@ -117,8 +118,8 @@ serve(async (req) => {
           JSON.stringify(pushPayload)
         )
         sent++
-      } catch (err: any) {
-        if (err.statusCode === 410) {
+      } catch (err) {
+        if ((err as { statusCode?: number }).statusCode === 410) {
           await supabaseAdmin
             .from('push_subscriptions')
             .delete()
@@ -131,9 +132,9 @@ serve(async (req) => {
       JSON.stringify({ sent, appointments: appointments.length }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
-  } catch (err: any) {
+  } catch (err) {
     return new Response(
-      JSON.stringify({ error: err.message }),
+      JSON.stringify({ error: err instanceof Error ? err.message : 'Reminder delivery failed' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   }

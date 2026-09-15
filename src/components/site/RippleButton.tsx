@@ -1,4 +1,5 @@
-import { forwardRef, MouseEvent, useState } from "react";
+import { forwardRef, MouseEvent, useState, useEffect, useRef } from "react";
+import { Slottable } from "@radix-ui/react-slot";
 import { Button, ButtonProps } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -14,6 +15,11 @@ let rippleId = 0;
 const RippleButton = forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, onClick, children, ...props }, ref) => {
     const [ripples, setRipples] = useState<Ripple[]>([]);
+    const timers = useRef(new Set<number>());
+    useEffect(() => {
+      const activeTimers = timers.current;
+      return () => activeTimers.forEach(window.clearTimeout);
+    }, []);
 
     const handleClick = (e: MouseEvent<HTMLButtonElement>) => {
       const reduce =
@@ -27,9 +33,11 @@ const RippleButton = forwardRef<HTMLButtonElement, ButtonProps>(
         const y = e.clientY - target.top - size / 2;
         const id = ++rippleId;
         setRipples((prev) => [...prev, { id, x, y, size }]);
-        window.setTimeout(() => {
+        const timer = window.setTimeout(() => {
           setRipples((prev) => prev.filter((r) => r.id !== id));
+          timers.current.delete(timer);
         }, 550);
+        timers.current.add(timer);
       }
 
       onClick?.(e);
@@ -42,7 +50,7 @@ const RippleButton = forwardRef<HTMLButtonElement, ButtonProps>(
         className={cn("relative overflow-hidden", className)}
         {...props}
       >
-        {children}
+        <Slottable>{children}</Slottable>
         {ripples.map((r) => (
           <span
             key={r.id}

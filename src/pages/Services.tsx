@@ -7,6 +7,12 @@ import RippleButton from "@/components/site/RippleButton";
 
 const services = [
   {
+    name: 'Finish Carpentry',
+    description: 'Crown molding, baseboards, interior trim and built-ins. Thoughtful woodwork that brings every room together.',
+    href: '/services/finish-carpentry',
+    image: '/images/interior-04.jpg',
+  },
+  {
     name: 'Interior Painting',
     description: 'Refined interior finishes for every room, from a single accent wall to your entire home.',
     href: '/services/interior-painting',
@@ -55,12 +61,6 @@ const services = [
     image: '/images/interior-01.jpg',
   },
   {
-    name: 'Handyman Services',
-    description: 'Small repairs and fixes done right. No job is too small for our experienced team.',
-    href: '/services/handyman',
-    image: '/images/project-09.jpg',
-  },
-  {
     name: 'Fence',
     description: 'Wood and vinyl fence installation and repair that stands strong through any season.',
     href: '/services/fence',
@@ -78,7 +78,7 @@ const services = [
     href: '/services/construction-cleaning',
     image: '/images/interior-05.jpg',
   },
-];
+].sort((a, b) => a.name.localeCompare(b.name, "en"));
 
 const Services = () => {
   return (

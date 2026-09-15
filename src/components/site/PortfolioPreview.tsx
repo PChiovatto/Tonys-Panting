@@ -12,12 +12,12 @@ const projects = [
 
 const PortfolioPreview = () => {
   const [activeSlide, setActiveSlide] = useState(0);
-  const [activeDesktopSlide, setActiveDesktopSlide] = useState(0);
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const desktopScrollRef = useRef<HTMLDivElement>(null);
 
-  const fixedProjects = projects.slice(0, 3);
-  const sliderProjects = projects.slice(3);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+
+
+
 
   useEffect(() => {
     const el = scrollRef.current;
@@ -32,19 +32,7 @@ const PortfolioPreview = () => {
     return () => el.removeEventListener("scroll", handleScroll);
   }, []);
 
-  useEffect(() => {
-    const el = desktopScrollRef.current;
-    if (!el) return;
 
-    const handleScroll = () => {
-      const slideWidth = el.offsetWidth / 3;
-      const index = Math.round(el.scrollLeft / slideWidth);
-      setActiveDesktopSlide(index);
-    };
-
-    el.addEventListener("scroll", handleScroll);
-    return () => el.removeEventListener("scroll", handleScroll);
-  }, []);
 
   return (
     <section id="portfolio" className="bg-stone overflow-hidden" style={{ contain: "layout" }}>
@@ -77,9 +65,8 @@ const PortfolioPreview = () => {
                 <img
                   src={p.src}
                   alt={p.alt}
-                  loading={i < 2 ? "eager" : "lazy"}
-                  // @ts-expect-error fetchpriority is valid HTML
-                  fetchpriority={i < 2 ? "high" : undefined}
+                  loading="lazy"
+                  
                   decoding="async"
                   style={{ objectPosition: "center" }}
                   className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
@@ -109,9 +96,8 @@ const PortfolioPreview = () => {
                 <img
                   src={p.src}
                   alt={p.alt}
-                  loading={i < 2 ? "eager" : "lazy"}
-                  // @ts-expect-error fetchpriority is valid HTML
-                  fetchpriority={i < 2 ? "high" : undefined}
+                  loading="lazy"
+                  
                   decoding="async"
                   style={{ objectPosition: "center" }}
                   className="w-full h-full object-cover"

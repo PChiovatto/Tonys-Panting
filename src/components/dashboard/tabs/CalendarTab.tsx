@@ -1,4 +1,7 @@
-import { useEffect, useState } from "react";
+import { toast } from "sonner";
+import { calendarDay, newYorkDay, newYorkTimeToISO } from "@/lib/calendarTime";
+import { useEffect, useState, useRef } from "react";
+import { useDialogFocus } from "@/hooks/useDialogFocus";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Lead } from "@/types/lead";
@@ -23,15 +26,6 @@ const isSameDay = (d1: Date, d2: Date) =>
 
 const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
-/** Offset em horas do fuso America/New_York para uma data (EST -5, EDT -4). */
-const nyOffsetHours = (date: Date): number => {
-  const tzDate = new Date(
-    date.toLocaleString("en-US", { timeZone: "America/New_York" }),
-  );
-  const utcDate = new Date(date.toLocaleString("en-US", { timeZone: "UTC" }));
-  return Math.round((tzDate.getTime() - utcDate.getTime()) / 3600000);
-};
-
 const fmtTimeET = (iso: string) =>
   new Date(iso).toLocaleTimeString("en-US", {
     hour: "2-digit",
@@ -40,10 +34,12 @@ const fmtTimeET = (iso: string) =>
   });
 
 const CalendarTab = ({ leads }: Props) => {
-  const [currentMonth, setCurrentMonth] = useState(new Date());
-  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [currentMonth, setCurrentMonth] = useState(new Date(`${newYorkDay(new Date())}T12:00:00`));
+  const [selectedDate, setSelectedDate] = useState(new Date(`${newYorkDay(new Date())}T12:00:00`));
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [showModal, setShowModal] = useState(false);
+  const modalRef = useRef<HTMLDivElement>(null);
+  useDialogFocus(showModal, modalRef, () => setShowModal(false));
   const [selectedDayForModal, setSelectedDayForModal] = useState<Date | null>(null);
 
   const [formTitle, setFormTitle] = useState("");
@@ -52,18 +48,27 @@ const CalendarTab = ({ leads }: Props) => {
   const [formLeadId, setFormLeadId] = useState("");
   const [saving, setSaving] = useState(false);
 
+  const [loadError, setLoadError] = useState(false);
+  const [retry, setRetry] = useState(0);
+  const requestId = useRef(0);
+
   useEffect(() => {
     let mounted = true;
 
-    const load = () => {
-      supabase
+    const load = async () => {
+      const id = ++requestId.current;
+      try {
+      const { data, error } = await supabase
         .from("appointments")
         .select("*, leads(name, phone, service_type)")
-        .order("scheduled_at", { ascending: true })
-        .then(({ data }) => {
-          if (!mounted) return;
-          setAppointments((data as unknown as Appointment[]) || []);
-        });
+        .order("scheduled_at", { ascending: true });
+      if (error) throw error;
+      if (!mounted || id !== requestId.current) return;
+      setAppointments((data as unknown as Appointment[]) || []);
+      setLoadError(false);
+      } catch {
+        if (mounted && id === requestId.current) setLoadError(true);
+      }
     };
 
     load();
@@ -75,15 +80,15 @@ const CalendarTab = ({ leads }: Props) => {
         { event: "*", schema: "public", table: "appointments" },
         () => load(),
       )
-      .subscribe();
+      .subscribe((status) => { if (status === "SUBSCRIBED") void load(); });
 
     return () => {
       mounted = false;
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [retry]);
 
-  const today = new Date();
+  const today = new Date(`${newYorkDay(new Date())}T12:00:00`);
   const year = currentMonth.getFullYear();
   const month = currentMonth.getMonth();
 
@@ -98,7 +103,7 @@ const CalendarTab = ({ leads }: Props) => {
   }
 
   const appointmentsFor = (date: Date) =>
-    appointments.filter((a) => isSameDay(new Date(a.scheduled_at), date));
+    appointments.filter((a) => newYorkDay(a.scheduled_at) === calendarDay(date));
 
   const dayAppointments = appointmentsFor(selectedDate);
 
@@ -120,36 +125,36 @@ const CalendarTab = ({ leads }: Props) => {
   };
 
   const deleteAppointment = async (id: string) => {
-    setAppointments((prev) => prev.filter((a) => a.id !== id));
-    await supabase.from("appointments").delete().eq("id", id);
+    try {
+      const { error } = await supabase.from("appointments").delete().eq("id", id).select("id").single();
+      if (error) throw error;
+      ++requestId.current;
+      setAppointments((prev) => prev.filter((a) => a.id !== id));
+    } catch { toast.error("Appointment was not deleted. Please try again."); }
   };
 
   const saveAppointment = async () => {
     if (!formTitle.trim() || !selectedDayForModal || saving) return;
     setSaving(true);
     try {
-      const y = selectedDayForModal.getFullYear();
-      const m = String(selectedDayForModal.getMonth() + 1).padStart(2, "0");
-      const d = String(selectedDayForModal.getDate()).padStart(2, "0");
-      const [hh, mm] = formTime.split(":").map(Number);
-
-      // Base UTC com a hora "local de NY", depois corrigida pelo offset real do dia
-      const base = new Date(Date.UTC(y, Number(m) - 1, Number(d), hh || 0, mm || 0));
-      const offset = nyOffsetHours(base);
-      const utcTime = new Date(base.getTime() - offset * 60 * 60 * 1000);
-
-      await supabase.from("appointments").insert({
+      const scheduledAt = newYorkTimeToISO(calendarDay(selectedDayForModal), formTime);
+      const { data, error } = await supabase.from("appointments").insert({
         title: formTitle.trim(),
         notes: formNotes,
         lead_id: formLeadId || null,
-        scheduled_at: utcTime.toISOString(),
-      });
+        scheduled_at: scheduledAt,
+      }).select("*, leads(name, phone, service_type)").single();
+      if (error) throw error;
+      ++requestId.current;
+      setAppointments((prev) => [...prev.filter((a) => a.id !== data.id), data as Appointment].sort((a, b) => a.scheduled_at.localeCompare(b.scheduled_at)));
 
       setShowModal(false);
       setFormTitle("");
       setFormTime("09:00");
       setFormNotes("");
       setFormLeadId("");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Appointment was not saved. Please try again.");
     } finally {
       setSaving(false);
     }
@@ -189,7 +194,7 @@ const CalendarTab = ({ leads }: Props) => {
         }
         .calendar-cell:hover { background: #F5F1EB; }
         .day-add-btn { display: none; }
-        .calendar-cell:hover .day-add-btn { display: flex !important; }
+        .calendar-cell:focus-within .day-add-btn, .calendar-cell:hover .day-add-btn { display: flex !important; }
         @media (max-width: 767px) {
           .calendar-container { padding: 16px !important; }
           .calendar-cell { height: 40px !important; font-size: 13px !important; }
@@ -202,6 +207,7 @@ const CalendarTab = ({ leads }: Props) => {
         }
       `}</style>
 
+      {loadError && <div role="alert" className="mb-4 border border-destructive p-3">Unable to load appointments. <button className="underline" onClick={() => setRetry((value) => value + 1)}>Retry</button></div>}
       <div className="calendar-layout">
         <div
           style={{
@@ -221,6 +227,7 @@ const CalendarTab = ({ leads }: Props) => {
           >
             <button
               className="calendar-nav-btn"
+              aria-label="Previous month"
               onClick={() => setCurrentMonth(new Date(year, month - 1, 1))}
               style={{
                 background: "transparent",
@@ -249,8 +256,8 @@ const CalendarTab = ({ leads }: Props) => {
                 <button
                   className="calendar-today-btn"
                   onClick={() => {
-                    setCurrentMonth(new Date());
-                    setSelectedDate(new Date());
+                    setCurrentMonth(new Date(`${newYorkDay(new Date())}T12:00:00`));
+                    setSelectedDate(new Date(`${newYorkDay(new Date())}T12:00:00`));
                   }}
                   style={{
                     padding: "4px 10px",
@@ -269,6 +276,7 @@ const CalendarTab = ({ leads }: Props) => {
             </div>
             <button
               className="calendar-nav-btn"
+              aria-label="Next month"
               onClick={() => setCurrentMonth(new Date(year, month + 1, 1))}
               style={{
                 background: "transparent",
@@ -331,7 +339,7 @@ const CalendarTab = ({ leads }: Props) => {
                     borderRadius: isToday || isSelected ? "50%" : 8,
                   }}
                 >
-                  <span>{date.getDate()}</span>
+                  <button type="button" onClick={() => setSelectedDate(date)} aria-label={date.toLocaleDateString("en-US", { dateStyle: "full" })} aria-pressed={isSelected} aria-current={isToday ? "date" : undefined} className="absolute inset-0 rounded-[inherit] bg-transparent">{date.getDate()}</button>
                   {dayAppts.length > 0 && (
                     <div
                       style={{
@@ -356,7 +364,7 @@ const CalendarTab = ({ leads }: Props) => {
                     </div>
                   )}
                   <button
-                    className="day-add-btn"
+                    className="day-add-btn" aria-label={`Add appointment on ${calendarDay(date)}`}
                     onClick={(e) => {
                       e.stopPropagation();
                       openModalFor(date);
@@ -508,6 +516,7 @@ const CalendarTab = ({ leads }: Props) => {
                     )}
                   </div>
                   <button
+                    aria-label={`Delete appointment: ${appt.title}`}
                     onClick={() => deleteAppointment(appt.id)}
                     style={{
                       background: "none",
@@ -640,6 +649,10 @@ const CalendarTab = ({ leads }: Props) => {
         >
           <div
             className="appt-modal"
+            ref={modalRef}
+            role="dialog"
+            aria-modal="true"
+            aria-label="New appointment"
             onClick={(e) => e.stopPropagation()}
             style={{
               background: "white",
@@ -691,6 +704,7 @@ const CalendarTab = ({ leads }: Props) => {
               Title *
             </label>
             <input
+              id="appointment-title" aria-label="Title" maxLength={200}
               value={formTitle}
               onChange={(e) => setFormTitle(e.target.value)}
               placeholder="Ex: Estimate visit, Follow-up call..."
@@ -721,6 +735,7 @@ const CalendarTab = ({ leads }: Props) => {
             </label>
             <input
               type="time"
+              id="appointment-time" aria-label="Time in New York"
               value={formTime}
               onChange={(e) => setFormTime(e.target.value)}
               style={{
@@ -749,6 +764,7 @@ const CalendarTab = ({ leads }: Props) => {
               Link to Lead (optional)
             </label>
             <select
+              id="appointment-lead" aria-label="Link to lead"
               value={formLeadId}
               onChange={(e) => setFormLeadId(e.target.value)}
               style={{
@@ -785,6 +801,7 @@ const CalendarTab = ({ leads }: Props) => {
               Notes (optional)
             </label>
             <textarea
+              id="appointment-notes" aria-label="Notes" maxLength={5000}
               value={formNotes}
               onChange={(e) => setFormNotes(e.target.value)}
               rows={3}

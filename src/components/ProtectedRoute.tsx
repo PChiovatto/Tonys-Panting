@@ -14,11 +14,6 @@ export const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
       }
     );
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setAuthenticated(!!session);
-      setLoading(false);
-    });
-
     return () => subscription.unsubscribe();
   }, []);
 

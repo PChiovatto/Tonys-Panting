@@ -16,38 +16,35 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background">
       <SEO
-        title="Painting and Remodeling You Can Trust | New England"
-        description="Tony's Painting and Remodeling has served New England since 2004. Interior, exterior, remodeling and more. Free estimates."
+        title="Painting & Remodeling in MA, NH & RI | Tony's"
+        description="Painting, finish carpentry and remodeling in MA, NH and RI, including Martha's Vineyard. Serving homeowners since 2004. Request a free estimate."
         canonical="/"
         keywords="painting company New England, house painters New England, interior exterior painting New England, painting remodeling contractor New England, Tony's Painting"
         schema={{
           "@context": "https://schema.org",
-          "@type": "LocalBusiness",
+          "@type": "HomeAndConstructionBusiness",
+          "@id": "https://tonyspaintingmv.com/#business",
           name: "Tony's Painting and Remodeling",
           description:
             "Professional painting and remodeling services serving New England since 2004.",
-          url: "https://tonyspaintingcmv.com",
+          url: "https://tonyspaintingmv.com",
           telephone: "+15089829675",
           email: "Tonyspainting11@gmail.com",
           foundingDate: "2004",
           founder: { "@type": "Person", name: "Otoniel Santos" },
           address: {
             "@type": "PostalAddress",
-            addressLocality: "New England",
+            streetAddress: "11 Cook Rd",
+            addressLocality: "Vineyard Haven",
+            postalCode: "02568",
             addressRegion: "MA",
             addressCountry: "US",
           },
-          geo: {
-            "@type": "GeoCoordinates",
-            latitude: 41.3805,
-            longitude: -70.6453,
-          },
           areaServed: [
-            { "@type": "Place", name: "New England" },
-            { "@type": "Place", name: "Massachusetts" },
-            { "@type": "Place", name: "Connecticut" },
-            { "@type": "Place", name: "Rhode Island" },
-            { "@type": "Place", name: "New Hampshire" },
+            { "@type": "State", name: "Massachusetts" },
+            { "@type": "State", name: "New Hampshire" },
+            { "@type": "State", name: "Rhode Island" },
+            { "@type": "Place", name: "Martha's Vineyard" },
           ],
           openingHoursSpecification: {
             "@type": "OpeningHoursSpecification",
@@ -55,17 +52,11 @@ const Index = () => {
             opens: "07:00",
             closes: "18:00",
           },
-          aggregateRating: {
-            "@type": "AggregateRating",
-            ratingValue: "5",
-            reviewCount: "9",
-            bestRating: "5",
-          },
           priceRange: "$$",
-          image: "https://tonyspaintingcmv.com/og-image.jpg",
+          image: "https://tonyspaintingmv.com/images/project-02.jpg",
           sameAs: [
             "https://www.instagram.com/tonyspainting_remodeling/",
-            "https://www.facebook.com/tonyspaintingmvLLC/",
+            "https://www.facebook.com/tonyspainting11",
           ],
           hasOfferCatalog: {
             "@type": "OfferCatalog",
@@ -79,16 +70,17 @@ const Index = () => {
               { "@type": "Offer", itemOffered: { "@type": "Service", name: "Ceramic Tile" } },
               { "@type": "Offer", itemOffered: { "@type": "Service", name: "Plastering" } },
               { "@type": "Offer", itemOffered: { "@type": "Service", name: "General Carpentry" } },
+              { "@type": "Offer", itemOffered: { "@type": "Service", name: "Finish Carpentry" } },
               { "@type": "Offer", itemOffered: { "@type": "Service", name: "Fence" } },
               { "@type": "Offer", itemOffered: { "@type": "Service", name: "Countertop" } },
               { "@type": "Offer", itemOffered: { "@type": "Service", name: "Construction Cleaning" } },
-              { "@type": "Offer", itemOffered: { "@type": "Service", name: "Handyman Services" } },
             ],
           },
         }}
       />
       <Navbar />
-      <main>
+      <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[120] focus:bg-background focus:p-3">Skip to content</a>
+      <main id="main-content" tabIndex={-1}>
         <Hero />
         <TrustBar />
         <VideoShowcase />

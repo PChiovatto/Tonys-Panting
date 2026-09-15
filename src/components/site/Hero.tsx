@@ -1,233 +1,13 @@
-import { useState, FormEvent, useEffect } from "react";
+import { useEffect } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { Shield, Star, CheckCircle2 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
-import heroBg from "@/assets/hero-bg.jpg";
+import TwoStepInquiryForm from "./TwoStepInquiryForm";
+
 import heroBgDesktop from "@/assets/hero-bg-desktop.jpg";
 import heroBgMobile from "@/assets/hero-bg-mobile.jpg";
 
 const HERO_IMAGE = heroBgMobile;
 const HERO_IMAGE_DESKTOP = heroBgDesktop;
-
-const GlassForm = () => {
-  const { toast } = useToast();
-  const navigate = useNavigate();
-  const [formData, setFormData] = useState({
-    fullName: "",
-    phone: "",
-    email: "",
-    service: "",
-    project: "",
-  });
-  const [submitting, setSubmitting] = useState(false);
-
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-    console.log('Supabase URL:', import.meta.env.VITE_SUPABASE_URL ? 'present' : 'MISSING');
-    console.log('Supabase Key:', import.meta.env.VITE_SUPABASE_ANON_KEY ? 'present' : 'MISSING');
-    if (!formData.fullName || !formData.phone || !formData.email || !formData.service) {
-      toast({
-        title: "Please fill in all required fields",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setSubmitting(true);
-    const { error } = await supabase.from("leads").insert({
-      name: formData.fullName,
-      phone: formData.phone,
-      email: formData.email,
-      service_type: formData.service,
-      message: formData.project,
-      prefer_phone: false,
-      status: "new",
-    });
-    setSubmitting(false);
-
-    if (error) {
-      console.error('Supabase insert error:', error);
-      console.error('Error details:', JSON.stringify(error, null, 2));
-      toast({
-        title: "Something went wrong",
-        description: "Please try again or call us directly.",
-        variant: "destructive",
-      });
-      return;
-    }
-    navigate("/thank-you");
-  };
-
-  const inputStyle = {
-    background: "rgba(255, 255, 255, 0.08)",
-    border: "1px solid rgba(255, 255, 255, 0.15)",
-    borderRadius: "8px",
-    padding: "0 14px",
-    height: "44px",
-    color: "white",
-    fontFamily: "'Montserrat', sans-serif",
-    fontSize: "13px",
-    outline: "none",
-    width: "100%",
-    transition: "border-color 0.2s",
-  };
-
-  return (
-    <form
-      onSubmit={handleSubmit}
-      style={{
-        background: "rgba(196, 41, 28, 0.056)",
-        backdropFilter: "blur(10px)",
-        WebkitBackdropFilter: "blur(10px)",
-        border: "1px solid rgba(196, 41, 28, 0.144)",
-        borderRadius: "16px",
-        padding: "28px",
-        display: "flex",
-        flexDirection: "column",
-        gap: "14px",
-        boxShadow: "0 8px 32px rgba(0, 0, 0, 0.30), inset 0 1px 0 rgba(255,255,255,0.08)",
-        willChange: "transform",
-      }}
-    >
-      <div>
-        <h3
-          style={{
-            fontFamily: "'Playfair Display', serif",
-            fontWeight: 700,
-            fontSize: "20px",
-            color: "#F5F1EB",
-            margin: "0 0 4px 0",
-          }}
-        >
-          Request a Consultation
-        </h3>
-        <p
-          style={{
-            fontFamily: "'Montserrat', sans-serif",
-            fontWeight: 400,
-            fontSize: "12px",
-            color: "rgba(255,255,255,0.60)",
-            lineHeight: 1.6,
-            margin: 0,
-          }}
-        >
-          No commitment. We respond within one business day.
-        </p>
-      </div>
-
-      <div style={{ display: "flex", gap: "10px" }}>
-        <input
-          placeholder="Full Name"
-          required
-          style={inputStyle}
-          value={formData.fullName}
-          onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-          onFocus={(e) => (e.target.style.borderColor = "rgba(196,41,28,0.70)")}
-          onBlur={(e) => (e.target.style.borderColor = "rgba(255,255,255,0.15)")}
-        />
-        <input
-          placeholder="Phone Number"
-          required
-          type="tel"
-          style={inputStyle}
-          value={formData.phone}
-          onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-          onFocus={(e) => (e.target.style.borderColor = "rgba(196,41,28,0.70)")}
-          onBlur={(e) => (e.target.style.borderColor = "rgba(255,255,255,0.15)")}
-        />
-      </div>
-
-      <input
-        placeholder="Email Address"
-        required
-        type="email"
-        style={inputStyle}
-        value={formData.email}
-        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-        onFocus={(e) => (e.target.style.borderColor = "rgba(196,41,28,0.70)")}
-        onBlur={(e) => (e.target.style.borderColor = "rgba(255,255,255,0.15)")}
-      />
-
-      <select
-        required
-        style={{ ...inputStyle, appearance: "none", cursor: "pointer" }}
-        value={formData.service}
-        onChange={(e) => setFormData({ ...formData, service: e.target.value })}
-        onFocus={(e) => (e.target.style.borderColor = "rgba(196,41,28,0.70)")}
-        onBlur={(e) => (e.target.style.borderColor = "rgba(255,255,255,0.15)")}
-      >
-        <option value="" disabled style={{ color: "black" }}>
-          Service Needed
-        </option>
-        {[
-          "Interior Painting",
-          "Exterior Painting",
-          "Remodeling",
-          "Handyman Services",
-          "Deck and Stairs",
-          "Flooring",
-          "Ceramic Tile",
-          "Plastering",
-          "Countertop",
-          "Fence",
-          "Other",
-        ].map((s) => (
-          <option key={s} value={s} style={{ color: "black" }}>
-            {s}
-          </option>
-        ))}
-      </select>
-
-      <textarea
-        placeholder="Tell us about your project"
-        rows={3}
-        style={{ ...inputStyle, height: "auto", padding: "10px 14px", resize: "none" }}
-        value={formData.project}
-        onChange={(e) => setFormData({ ...formData, project: e.target.value })}
-        onFocus={(e) => (e.target.style.borderColor = "rgba(196,41,28,0.70)")}
-        onBlur={(e) => (e.target.style.borderColor = "rgba(255,255,255,0.15)")}
-      />
-
-      <button
-        type="submit"
-        disabled={submitting}
-        style={{
-          width: "100%",
-          height: "48px",
-          background: submitting ? "#8B1A10" : "#C4291C",
-          borderRadius: "8px",
-          color: "white",
-          fontFamily: "'Montserrat', sans-serif",
-          fontWeight: 600,
-          fontSize: "14px",
-          border: "none",
-          cursor: submitting ? "not-allowed" : "pointer",
-          transition: "background 0.2s",
-          boxShadow: "0 4px 16px rgba(196,41,28,0.40)",
-        }}
-        onMouseEnter={(e) => !submitting && (e.currentTarget.style.background = "#8B1A10")}
-        onMouseLeave={(e) => !submitting && (e.currentTarget.style.background = "#C4291C")}
-      >
-        {submitting ? "Sending..." : "Send My Request →"}
-      </button>
-
-      <p
-        style={{
-          fontFamily: "'Montserrat', sans-serif",
-          fontWeight: 400,
-          fontSize: "10px",
-          color: "rgba(255,255,255,0.35)",
-          textAlign: "center",
-          margin: 0,
-        }}
-      >
-        Licensed and Insured. Serving New England since 2004.
-      </p>
-    </form>
-  );
-};
 
 const Hero = () => {
   const reduce = useReducedMotion();
@@ -349,7 +129,7 @@ const Hero = () => {
         {/* Desktop Right Panel (Form) */}
         <div className="hero-form-panel desktop-only">
           <motion.div {...fadeUp(0.5)}>
-            <GlassForm />
+            <TwoStepInquiryForm dark />
           </motion.div>
         </div>
       </div>
@@ -500,6 +280,13 @@ const Hero = () => {
           color: #FFFFFF;
         }
 
+        @media (min-width: 768px) and (max-width: 1023px) {
+          .hero-form-panel { display: none !important; }
+          .hero-layout-container { padding: 100px 24px 60px; }
+          .hero-content { max-width: 640px; margin: auto; min-width: 0; padding: 0 !important; }
+          .hero-mobile-btn { display: inline-flex !important; align-self: flex-start; align-items: center; min-height: 48px; padding: 12px 24px; background: #C4291C; color: white; border-radius: 8px; font-weight: 600; }
+          .hero-stats { flex-wrap: wrap; }
+        }
         @media (max-width: 767px) {
           .desktop-only { display: none !important; }
           .mobile-only { display: block !important; }
@@ -641,3 +428,4 @@ const Hero = () => {
 };
 
 export default Hero;
+

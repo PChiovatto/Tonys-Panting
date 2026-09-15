@@ -51,5 +51,5 @@ export const getStatusBadge = (status: LeadStatus): BadgeStyle => {
     closed_lost: { label: "Closed Lost", bg: "#FCEBEB", color: "#A32D2D" },
     no_show: { label: "No Show", bg: "#F1EFE8", color: "#5F5E5A" },
   };
-  return map[status];
+  return map[status] ?? { label: "Unknown", bg: "#F1EFE8", color: "#6B6560" };
 };

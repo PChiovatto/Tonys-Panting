@@ -1,10 +1,10 @@
 import { useState, useRef, useEffect } from "react";
 
 const reels = [
-  { video: "/videos/reel-01.mp4", url: "https://www.instagram.com/reel/DXnh0eujkbr/" },
-  { video: "/videos/reel-02.mp4", url: "https://www.instagram.com/reel/DXfU0FhCax4/" },
-  { video: "/videos/reel-03.mp4", url: "https://www.instagram.com/reel/DXk-G4QDmP5/" },
-  { video: "/videos/reel-04.mp4", url: "https://www.instagram.com/reel/DXWuvwnjjIX/" },
+  { video: "/videos/reel-01.mp4", url: "https://www.instagram.com/reel/DXnh0eujkbr/", poster: "/images/project-02.jpg" },
+  { video: "/videos/reel-02.mp4", url: "https://www.instagram.com/reel/DXfU0FhCax4/", poster: "/images/interior-04.jpg" },
+  { video: "/videos/reel-03.mp4", url: "https://www.instagram.com/reel/DXk-G4QDmP5/", poster: "/images/project-07.jpg" },
+  { video: "/videos/reel-04.mp4", url: "https://www.instagram.com/reel/DXWuvwnjjIX/", poster: "/images/remodeling-02.jpg" },
 ];
 
 const INSTAGRAM_PROFILE = "https://www.instagram.com/tonyspainting_remodeling/";
@@ -18,30 +18,9 @@ const IgIcon = () => (
 );
 
 const ReelCard = ({ reel }: { reel: typeof reels[0] }) => {
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-  const ref = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const obs = new IntersectionObserver(
-      ([e]) => {
-        if (e.isIntersecting) {
-          videoRef.current?.play().catch(() => {});
-        } else {
-          videoRef.current?.pause();
-        }
-      },
-      { threshold: 0.4 }
-    );
-    obs.observe(el);
-    return () => obs.disconnect();
-  }, []);
 
   return (
     <div
-      ref={ref}
-      onClick={() => window.open(reel.url, "_blank", "noopener,noreferrer")}
       style={{
         width: "100%",
         height: "100%",
@@ -54,22 +33,14 @@ const ReelCard = ({ reel }: { reel: typeof reels[0] }) => {
         boxShadow: "0 4px 20px rgba(0,0,0,0.10)",
       }}
     >
-      <video
-        ref={videoRef}
-        src={reel.video}
-        muted
-        loop
-        playsInline
-        preload="metadata"
-        style={{
-          width: "100%",
-          height: "100%",
-          objectFit: "contain",
-          display: "block",
-        }}
-      />
+      <video src={reel.video} poster={reel.poster} controls playsInline preload="none"
+        aria-label="Tony's Painting project reel" className="h-full w-full object-contain" />
 
-      <div
+      <a
+        href={reel.url}
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="Open reel on Instagram"
         style={{
           position: "absolute",
           top: "10px",
@@ -86,12 +57,11 @@ const ReelCard = ({ reel }: { reel: typeof reels[0] }) => {
           fontSize: "11px",
           letterSpacing: "0.02em",
           backdropFilter: "blur(6px)",
-          pointerEvents: "none",
         }}
       >
         <IgIcon />
-        Reel
-      </div>
+        Instagram
+      </a>
     </div>
   );
 };

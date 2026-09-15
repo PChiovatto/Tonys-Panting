@@ -1,5 +1,5 @@
-// v5 - deps normalized
-import { createClient } from "npm:@supabase/supabase-js@2";
+import { hasServiceAuthorization } from "../_shared/authorization.ts";
+import { createClient } from "npm:@supabase/supabase-js@2.116.0";
 import webpush from "npm:web-push@3.6.7";
 
 const supabaseAdmin = createClient(
@@ -17,12 +17,17 @@ Deno.serve(async (req) => {
     return new Response("ok", { headers: corsHeaders });
   }
 
+  if (req.method !== "POST") return new Response("Method not allowed", { status: 405 });
+  if (!hasServiceAuthorization(req, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"))) {
+    return new Response("Unauthorized", { status: 401 });
+  }
+
   try {
     const payload = await req.json();
-    const { title, body, source, source_type, project_type, photo_count, city, state, name } = payload ?? {};
+    const { title, body } = payload ?? {};
 
-    let notifTitle = title || "New Lead Received";
-    let notifBody = body || "New lead received.";
+    const notifTitle = typeof title === "string" ? title.slice(0, 160) : "New Lead Received";
+    const notifBody = typeof body === "string" ? body.slice(0, 1000) : "New lead received.";
 
     webpush.setVapidDetails(
       Deno.env.get("VAPID_SUBJECT")!,
@@ -30,9 +35,11 @@ Deno.serve(async (req) => {
       Deno.env.get("VAPID_PRIVATE_KEY")!,
     );
 
-    const { data: subscriptions } = await supabaseAdmin
+    const { data: subscriptions, error: subscriptionError } = await supabaseAdmin
       .from("push_subscriptions")
       .select("*");
+
+    if (subscriptionError) throw subscriptionError;
 
     if (!subscriptions || subscriptions.length === 0) {
       return new Response(
@@ -49,7 +56,7 @@ Deno.serve(async (req) => {
     const pushPayload = {
       title: notifTitle,
       body: notifBody,
-      count: count || 1,
+      count: count ?? 0,
     };
 
     const results = await Promise.allSettled(

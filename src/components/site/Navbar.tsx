@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useDialogFocus } from "@/hooks/useDialogFocus";
+import { useEffect, useState, useRef } from "react";
 import { Menu, X, ChevronDown } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -8,16 +9,25 @@ const services = [
   { label: "Interior Painting", href: "/services/interior-painting" },
   { label: "Exterior Painting", href: "/services/exterior-painting" },
   { label: "Remodeling", href: "/services/remodeling" },
-  { label: "Handyman Services", href: "/services/handyman" },
   { label: "Deck and Stairs", href: "/services/deck-stairs" },
   { label: "Construction Cleaning", href: "/services/construction-cleaning" },
   { label: "General Carpentry", href: "/services/carpentry" },
+  { label: "Finish Carpentry", href: "/services/finish-carpentry" },
   { label: "Flooring", href: "/services/flooring" },
   { label: "Ceramic Tile", href: "/services/ceramic-tile" },
   { label: "Fence", href: "/services/fence" },
   { label: "Plastering", href: "/services/plastering" },
   { label: "Countertop", href: "/services/countertop" },
-];
+].sort((a, b) => a.label.localeCompare(b.label, "en"));
+
+const serviceGroups = [
+  { title: "Painting", slugs: ["exterior-painting", "interior-painting", "plastering"] },
+  { title: "Carpentry", slugs: ["deck-stairs", "fence", "finish-carpentry", "carpentry"] },
+  { title: "Remodeling & Finishes", slugs: ["ceramic-tile", "construction-cleaning", "countertop", "flooring", "remodeling"] },
+].map((group) => ({
+  title: group.title,
+  services: services.filter((service) => group.slugs.includes(service.href.split("/").pop()!)),
+}));
 
 const navLinks = [
   { label: "Portfolio", href: "/portfolio" },
@@ -31,6 +41,9 @@ const Navbar = () => {
   const [scrolled, setScrolled] = useState(false);
   const [servicesOpen, setServicesOpen] = useState(false);
   const [mobileServicesOpen, setMobileServicesOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const toggleRef = useRef<HTMLButtonElement>(null);
+  useDialogFocus(open, menuRef, () => setOpen(false), toggleRef);
   const location = useLocation();
   const isHome = location.pathname === "/";
 
@@ -40,12 +53,7 @@ const Navbar = () => {
     setMobileServicesOpen(false);
   }, [location.pathname]);
 
-  useEffect(() => {
-    document.body.style.overflow = open ? "hidden" : "";
-    return () => {
-      document.body.style.overflow = "";
-    };
-  }, [open]);
+
 
   useEffect(() => {
     if (!isHome) return;
@@ -80,11 +88,14 @@ const Navbar = () => {
             </a>
           </div>
 
-          <ul className="hidden md:flex flex-1 items-center justify-center gap-8">
+          <ul className="hidden lg:flex flex-1 items-center justify-center gap-8">
             <li
               className="relative"
               onMouseEnter={() => setServicesOpen(true)}
               onMouseLeave={() => setServicesOpen(false)}
+              onFocus={() => setServicesOpen(true)}
+              onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) setServicesOpen(false); }}
+              onKeyDown={(event) => { if (event.key === "Escape") setServicesOpen(false); }}
             >
               <a
                 href="/services"
@@ -104,15 +115,20 @@ const Navbar = () => {
                     : "opacity-0 invisible -translate-y-1 pointer-events-none",
                 )}
               >
-                <div className="bg-[#2A2A28] border border-white/10 shadow-[0_8px_30px_rgba(0,0,0,0.3)] rounded-sm grid grid-cols-2 gap-x-2 py-3 min-w-[460px]">
-                  {services.map((s) => (
-                    <a
-                      key={s.href}
-                      href={s.href}
-                      className="block px-5 py-2 text-sm text-white/80 hover:text-primary hover:bg-white/5 transition-colors whitespace-nowrap"
-                    >
-                      {s.label}
-                    </a>
+                <div className="grid w-[680px] grid-cols-3 gap-4 rounded-sm border border-white/10 bg-[#2A2A28] p-5 shadow-[0_8px_30px_rgba(0,0,0,0.3)]">
+                  {serviceGroups.map((group) => (
+                    <section key={group.title} aria-label={group.title}>
+                      <h2 className="mb-2 border-b border-white/15 pb-3 text-xs font-semibold uppercase tracking-wider text-white">{group.title}</h2>
+                      <ul className="space-y-1">
+                        {group.services.map((service) => (
+                          <li key={service.href}>
+                            <a href={service.href} className="flex min-h-11 items-center rounded px-2 py-2 text-sm text-white/80 transition-colors hover:bg-white/5 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary">
+                              {service.label}
+                            </a>
+                          </li>
+                        ))}
+                      </ul>
+                    </section>
                   ))}
                 </div>
               </div>
@@ -130,7 +146,7 @@ const Navbar = () => {
             ))}
           </ul>
 
-          <div className="hidden md:flex flex-1 justify-end">
+          <div className="hidden lg:flex flex-1 justify-end">
             <a
               href="/contact"
               className="group inline-flex items-center gap-2 bg-primary text-white hover:bg-primary-dark rounded-lg px-5 py-2.5 text-sm font-medium transition-all duration-200"
@@ -145,9 +161,12 @@ const Navbar = () => {
 
       {/* Hamburger/X mobile - acima do overlay */}
       <button
-        aria-label="Toggle menu"
+        aria-label={open ? "Close menu" : "Open menu"}
+        aria-expanded={open}
+        aria-controls="mobile-navigation"
+        ref={toggleRef}
         onClick={() => setOpen((v) => !v)}
-        className="md:hidden"
+        className="flex lg:!hidden"
         style={{
           position: "fixed",
           top: "14px",
@@ -166,7 +185,12 @@ const Navbar = () => {
 
       {/* MOBILE MENU - fora do header */}
       <div
-        className="md:hidden"
+        id="mobile-navigation"
+        ref={menuRef}
+        role="dialog"
+        aria-modal={open || undefined}
+        aria-label="Navigation menu"
+        className="flex lg:!hidden"
         style={{
           position: "fixed",
           inset: 0,
@@ -238,6 +262,7 @@ const Navbar = () => {
                   <div
                     style={{
                       maxHeight: mobileServicesOpen ? "60vh" : "0",
+                      visibility: mobileServicesOpen ? "visible" : "hidden",
                       overflow: "hidden",
                       overflowY: mobileServicesOpen ? "auto" : "hidden",
                       transition: "max-height 0.3s ease",
@@ -263,23 +288,18 @@ const Navbar = () => {
                           All Services
                         </a>
                       </li>
-                      {services.map((s) => (
-                        <li key={s.href}>
-                          <a
-                            href={s.href}
-                            onClick={() => setOpen(false)}
-                            style={{
-                              display: "block",
-                              padding: "10px 0",
-                              fontFamily: "'Inter', sans-serif",
-                              fontWeight: 400,
-                              fontSize: "15px",
-                              color: "rgba(255,255,255,0.7)",
-                              textDecoration: "none",
-                            }}
-                          >
-                            {s.label}
-                          </a>
+                      {serviceGroups.map((group) => (
+                        <li key={group.title} className="mt-5">
+                          <h3 className="mb-2 border-b border-white/15 pb-2 text-xs font-semibold uppercase tracking-wider text-white">{group.title}</h3>
+                          <ul className="list-none p-0">
+                            {group.services.map((service) => (
+                              <li key={service.href}>
+                                <a href={service.href} onClick={() => setOpen(false)} className="flex min-h-11 items-center py-2 text-[15px] text-white/80 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary">
+                                  {service.label}
+                                </a>
+                              </li>
+                            ))}
+                          </ul>
                         </li>
                       ))}
                     </ul>

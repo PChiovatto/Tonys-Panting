@@ -15,8 +15,21 @@ import deck07 from "@/assets/deck-IMG_2896.jpg.asset.json";
 import deck08 from "@/assets/deck-project-07.jpg.asset.json";
 
 const SEO_BY_SLUG: Record<string, { title: string; description: string; keywords: string; schema?: object }> = {
+  "finish-carpentry": {
+    title: "Finish Carpentry Services in MA, NH & RI",
+    description: "Finish carpentry for your home: crown molding, baseboards, door and window trim, wainscoting and built-ins. Request a consultation with Tony's.",
+    keywords: "finish carpentry New England, crown molding, baseboard installation, interior trim, wainscoting",
+    schema: {
+      "@context": "https://schema.org",
+      "@type": "Service",
+      name: "Finish Carpentry",
+      provider: { "@type": "LocalBusiness", name: "Tony's Painting and Remodeling" },
+      areaServed: ["Massachusetts, USA", "New Hampshire, USA", "Rhode Island, USA", "Martha's Vineyard, MA"],
+      description: "Interior woodwork including crown molding, baseboards, door and window trim, wall paneling and built-ins.",
+    },
+  },
   "interior-painting": {
-    title: "Interior Painting Services in New England",
+    title: "Interior Painting Services in MA, NH & RI",
     description:
       "Professional interior painting for homes and businesses across New England. Clean, on schedule, 20 years of experience. Free estimate.",
     keywords:
@@ -26,13 +39,13 @@ const SEO_BY_SLUG: Record<string, { title: string; description: string; keywords
       "@type": "Service",
       name: "Interior Painting",
       provider: { "@type": "LocalBusiness", name: "Tony's Painting and Remodeling", telephone: "+15089829675" },
-      areaServed: "New England, USA",
+      areaServed: ["Massachusetts, USA", "New Hampshire, USA", "Rhode Island, USA", "Martha's Vineyard, MA"],
       description: "Interior painting for residential and commercial spaces across New England. Walls, ceilings, trim, accent walls and more.",
       offers: { "@type": "Offer", availability: "https://schema.org/InStock", priceCurrency: "USD" },
     },
   },
   "exterior-painting": {
-    title: "Exterior Painting Services in New England",
+    title: "Exterior Painting Services in MA, NH & RI",
     description:
       "Premium exterior painting built to handle New England weather. Serving New England since 2004. Benjamin Moore certified. Free estimate.",
     keywords:
@@ -42,13 +55,13 @@ const SEO_BY_SLUG: Record<string, { title: string; description: string; keywords
       "@type": "Service",
       name: "Exterior Painting",
       provider: { "@type": "LocalBusiness", name: "Tony's Painting and Remodeling", telephone: "+15089829675" },
-      areaServed: "New England, USA",
+      areaServed: ["Massachusetts, USA", "New Hampshire, USA", "Rhode Island, USA", "Martha's Vineyard, MA"],
       description: "Exterior painting with premium paints built for New England weather. Siding, trim, decks, fences and more.",
       offers: { "@type": "Offer", availability: "https://schema.org/InStock", priceCurrency: "USD" },
     },
   },
   remodeling: {
-    title: "Home Remodeling Services in New England",
+    title: "Home Remodeling Services in MA, NH & RI",
     description:
       "Flooring, tile, plastering, carpentry and countertop installation across New England. One team for every job. Free estimate.",
     keywords:
@@ -58,64 +71,58 @@ const SEO_BY_SLUG: Record<string, { title: string; description: string; keywords
       "@type": "Service",
       name: "Home Remodeling",
       provider: { "@type": "LocalBusiness", name: "Tony's Painting and Remodeling", telephone: "+15089829675" },
-      areaServed: "New England, USA",
+      areaServed: ["Massachusetts, USA", "New Hampshire, USA", "Rhode Island, USA", "Martha's Vineyard, MA"],
       description: "Full remodeling services including flooring, tile, plastering, carpentry and countertop installation.",
       offers: { "@type": "Offer", availability: "https://schema.org/InStock", priceCurrency: "USD" },
     },
   },
   "deck-stairs": {
-    title: "Deck Staining and Repair in New England",
+    title: "Deck Staining and Repair in MA, NH & RI",
     description:
       "Professional deck staining, sealing and repair across New England. Built to withstand harsh winters. Free estimate.",
     keywords: "deck staining New England, deck repair New England, deck sealing New England, outdoor deck refinishing MA",
   },
   flooring: {
-    title: "Flooring Installation in New England",
+    title: "Flooring Installation in MA, NH & RI",
     description:
       "Hardwood, vinyl and LVP flooring installation across New England. Historic and modern homes. Free estimate.",
     keywords: "flooring installation New England, hardwood floors New England, vinyl flooring New England, floor refinishing MA",
   },
   "ceramic-tile": {
-    title: "Ceramic Tile Installation in New England",
+    title: "Ceramic Tile Installation in MA, NH & RI",
     description:
       "Precision tile work for bathrooms, kitchens and floors across New England. Clean lines, lasting results. Free estimate.",
     keywords: "tile installation New England, ceramic tile New England, bathroom tile New England, kitchen backsplash MA",
   },
   plastering: {
-    title: "Plastering and Skim Coating in New England",
+    title: "Plastering and Skim Coating in MA, NH & RI",
     description:
       "Crack repair, skim coating and plaster restoration across New England. Smooth walls, done properly. Free estimate.",
     keywords: "plastering New England, skim coating New England, plaster repair New England, drywall patching MA",
   },
   carpentry: {
-    title: "Carpentry Services in New England",
+    title: "Carpentry Services in MA, NH & RI",
     description:
       "Trim, moldings, built-ins and structural wood repairs across New England. Free estimate.",
     keywords: "carpentry New England, trim moldings New England, general carpentry New England, built-in shelving MA",
   },
   fence: {
-    title: "Fence Installation and Repair in New England",
+    title: "Fence Installation and Repair in MA, NH & RI",
     description:
       "Wood and vinyl fence installation and repair across New England. Built to last through harsh winters. Free estimate.",
     keywords: "fence installation New England, fence repair New England, wood vinyl fence New England, fence contractor MA",
   },
   countertop: {
-    title: "Countertop Installation in New England",
+    title: "Countertop Installation in MA, NH & RI",
     description:
       "Kitchen and bathroom countertop installation across New England. Precise measurement, clean finish. Free estimate.",
     keywords: "countertop installation New England, kitchen countertop New England, bathroom vanity countertop New England",
   },
   "construction-cleaning": {
-    title: "Construction Cleaning Services in New England",
+    title: "Construction Cleaning Services in MA, NH & RI",
     description:
       "Post-construction cleanup for residential and commercial spaces across New England. Ready to use from day one. Free estimate.",
     keywords: "construction cleaning New England, post construction cleanup New England, construction cleaning New England",
-  },
-  handyman: {
-    title: "Handyman Services in New England",
-    description:
-      "Deck repair, fence, stairs and general repairs across New England. Small jobs done right. Free estimate.",
-    keywords: "handyman New England, handyman services New England, property repairs New England, general repairs MA",
   },
 };
 
@@ -128,6 +135,20 @@ interface ServiceData {
 }
 
 const SERVICES: Record<string, ServiceData> = {
+  "finish-carpentry": {
+    slug: "finish-carpentry",
+    name: "Finish Carpentry",
+    description: "The final details bring a room together. From carefully fitted baseboards to crown molding and custom built-ins, our finish carpentry gives your interior a clean, cohesive look. We plan the profiles and proportions with you, measure each space, and fit every joint with care. Whether you are refreshing one room or completing a renovation, we prepare the woodwork for the paint or stain finish you choose.",
+    includes: [
+      "Crown molding and ceiling trim",
+      "Baseboards and shoe molding",
+      "Door and window casings",
+      "Wainscoting, chair rails and wall paneling",
+      "Built-in shelving and storage details",
+      "Interior trim repairs and replacement",
+      "Preparation for paint or stain",
+    ],
+  },
   "interior-painting": {
     slug: "interior-painting",
     name: "Interior Painting",
@@ -170,19 +191,6 @@ const SERVICES: Record<string, ServiceData> = {
       "General carpentry",
       "Countertop installation",
       "Finish work and moldings",
-    ],
-  },
-  handyman: {
-    slug: "handyman",
-    name: "Handyman Services",
-    description:
-      "Small jobs matter just as much as big ones. From fixing a deck to cleaning up after a construction project, we take care of the details that keep your property in great shape.",
-    includes: [
-      "Deck and stair repair",
-      "Fence installation and repair",
-      "Construction cleaning",
-      "General repairs",
-      "Door and window trim",
     ],
   },
   "deck-stairs": {
@@ -291,12 +299,22 @@ const SERVICES: Record<string, ServiceData> = {
   },
 };
 
+const gallery: Record<string, string[]> = {
+  "interior-painting": ["/images/interior-04.jpg", "/images/interior-03.jpg", "/images/interior-05.jpg", "/images/interior-01.jpg", "/images/interior-02.jpg", "/images/project-05.jpg"],
+  "exterior-painting": ["/images/project-02.jpg", "/images/project-12.jpg", "/images/project-14.jpg", "/images/project-13.jpg", "/images/project-03.jpg", "/images/project-01.jpg"],
+  "remodeling": ["/images/remodeling-02.jpg", "/images/flooring-01.jpg", "/images/project-04.jpg", "/images/project-16.jpg", "/images/project-15.jpg", "/images/project-08.jpg"],
+  "flooring": ["/images/flooring-01.jpg", "/images/flooring-03.jpg", "/images/flooring-02.jpg", "/images/project-08.jpg", "/images/project-07.jpg", "/images/project-09.jpg"],
+  "countertop": ["/images/interior-02.jpg", "/images/interior-01.jpg", "/images/interior-04.jpg", "/images/project-16.jpg"],
+  "deck-stairs": [deck01.url, deck02.url, deck03.url, deck04.url, deck05.url, deck06.url, deck07.url, deck08.url]
+};
+
 const ServiceDetail = () => {
   const { slug } = useParams<{ slug: string }>();
   const service = slug ? SERVICES[slug] : undefined;
 
   if (!service) return <Navigate to="/services" replace />;
 
+  const images = gallery[service.slug] ?? [];
   const seo = slug ? SEO_BY_SLUG[slug] : undefined;
 
   return (
@@ -307,7 +325,17 @@ const ServiceDetail = () => {
           description={seo.description}
           canonical={`/services/${slug}`}
           keywords={seo.keywords}
-          schema={seo.schema}
+          schema={{
+            "@context": "https://schema.org",
+            "@graph": [
+              { "@type": "Service", "@id": `https://tonyspaintingmv.com/services/${slug}#service`, name: service.name, description: seo.description, url: `https://tonyspaintingmv.com/services/${slug}`, provider: { "@id": "https://tonyspaintingmv.com/#business" }, areaServed: ["Massachusetts, USA", "New Hampshire, USA", "Rhode Island, USA", "Martha's Vineyard, MA"] },
+              { "@type": "BreadcrumbList", itemListElement: [
+                { "@type": "ListItem", position: 1, name: "Home", item: "https://tonyspaintingmv.com/" },
+                { "@type": "ListItem", position: 2, name: "Services", item: "https://tonyspaintingmv.com/services" },
+                { "@type": "ListItem", position: 3, name: service.name, item: `https://tonyspaintingmv.com/services/${slug}` },
+              ] },
+            ],
+          }}
         />
       )}
       <InnerHero
@@ -329,6 +357,7 @@ const ServiceDetail = () => {
             </h2>
             <p className="text-base md:text-lg text-muted-foreground leading-relaxed">
               {service.description}
+              <span className="mt-4 block">Serving Massachusetts, New Hampshire and Rhode Island, including Martha's Vineyard.</span>
             </p>
           </div>
 
@@ -346,7 +375,7 @@ const ServiceDetail = () => {
         </div>
       </section>
 
-      <section className="bg-stone">
+      {images.length > 0 && <section className="bg-stone">
         <div className="container py-16 md:py-24">
           <div className="flex items-end justify-between mb-10">
             <div>
@@ -355,16 +384,6 @@ const ServiceDetail = () => {
             </div>
           </div>
           {(() => {
-            const gallery: Record<string, string[]> = {
-              "interior-painting": ["/images/interior-04.jpg", "/images/interior-03.jpg", "/images/interior-05.jpg", "/images/interior-01.jpg", "/images/interior-02.jpg", "/images/project-05.jpg"],
-              "exterior-painting": ["/images/project-02.jpg", "/images/project-12.jpg", "/images/project-14.jpg", "/images/project-13.jpg", "/images/project-03.jpg", "/images/project-01.jpg"],
-              "remodeling": ["/images/remodeling-02.jpg", "/images/flooring-01.jpg", "/images/project-04.jpg", "/images/project-16.jpg", "/images/project-15.jpg", "/images/project-08.jpg"],
-              "flooring": ["/images/flooring-01.jpg", "/images/flooring-03.jpg", "/images/flooring-02.jpg", "/images/project-08.jpg", "/images/project-07.jpg", "/images/project-09.jpg"],
-              "countertop": ["/images/interior-02.jpg", "/images/interior-01.jpg", "/images/interior-04.jpg", "/images/project-16.jpg"],
-              "handyman": ["/images/project-08.jpg", "/images/project-07.jpg", "/images/project-09.jpg", "/images/project-11.jpg"],
-              "deck-stairs": [deck01.url, deck02.url, deck03.url, deck04.url, deck05.url, deck06.url, deck07.url, deck08.url]
-            };
-            const images = service.slug ? (gallery[service.slug] || []) : [];
             return (
               <>
                 {/* Mobile: one-photo slide carousel */}
@@ -393,7 +412,7 @@ const ServiceDetail = () => {
             );
           })()}
         </div>
-      </section>
+      </section>}
 
       {service.slug === "deck-stairs" && (
         <section className="bg-background">
@@ -429,7 +448,7 @@ const ServiceDetail = () => {
             size="lg"
             className="mt-8 bg-primary text-primary-foreground hover:bg-primary-dark rounded-sm h-12 px-10"
           >
-            <Link to="/#contact">Request a Consultation</Link>
+            <Link to="/contact">Request a Consultation</Link>
           </Button>
         </div>
       </section>

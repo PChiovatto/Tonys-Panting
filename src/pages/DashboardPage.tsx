@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useLeads } from "@/hooks/useLeads";
 import Sidebar, { type DashTab } from "@/components/dashboard/Sidebar";
@@ -29,18 +30,18 @@ const TAB_TITLES: Record<DashTab, string> = {
 const DashboardPage = () => {
   const [activeTab, setActiveTab] = useState<DashTab>("overview");
   const [userId, setUserId] = useState<string | null>(null);
-  const { leads, loading, updateLead, deleteLead } = useLeads();
+  const { leads, loading, error, reload, updateLead, deleteLead } = useLeads();
   const navigate = useNavigate();
 
   useEffect(() => {
     // Enviar mensagem para o service worker limpar o badge
     const sendClearMessage = async () => {
       try {
-        const sw = await navigator.serviceWorker.ready
-        if (sw.active) {
+        const sw = await navigator.serviceWorker?.getRegistration()
+        if (sw?.active) {
           sw.active.postMessage({ type: 'CLEAR_BADGE' })
         }
-      } catch(e) {}
+      } catch { /* Badge support is optional. */ }
     }
 
     sendClearMessage()
@@ -71,13 +72,16 @@ const DashboardPage = () => {
         await subscribeUserToPush(session.user.id);
       }
     };
-    initPush();
+    void initPush().catch(() => toast.error("Notifications could not be initialized."));
   }, []);
 
   const handleSignOut = async () => {
+    try {
     await unsubscribeFromPush();
-    await supabase.auth.signOut();
+    const { error } = await supabase.auth.signOut();
+    if (error) throw error;
     navigate("/login");
+    } catch { toast.error("Sign out failed. Please try again."); }
   };
 
   const newLeadsCount = leads.filter((l) => l.status === "new").length;
@@ -150,6 +154,7 @@ const DashboardPage = () => {
         <DashHeader title={TAB_TITLES[activeTab]} onSignOut={handleSignOut} />
         {userId && <NotificationBanner userId={userId} />}
         <main style={{ flex: 1 }}>
+          {error && <div role="alert" className="m-4 rounded border border-destructive p-4">{error} <button onClick={() => void reload()} className="underline">Retry</button></div>}
           {activeTab === "overview" && <OverviewTab leads={leads} loading={loading} />}
           {activeTab === "leads" && <LeadsTab leads={leads} updateLead={updateLead} deleteLead={deleteLead} />}
           {activeTab === "calendar" && <CalendarTab leads={leads} />}
