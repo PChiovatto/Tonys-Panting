@@ -1,0 +1,14 @@
+project_id = "ghznuutonacttnmqtiil"
+
+[functions.send-push]
+verify_jwt = false
+
+[functions.notify-new-lead]
+verify_jwt = false
+
+[functions.submit-project-lead]
+verify_jwt = false
+
+[functions.send-reminder]
+verify_jwt = false
+
