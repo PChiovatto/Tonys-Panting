@@ -49,6 +49,10 @@ Antes de publicar este frontend, aplique `20260915060000_two_step_inquiries.sql`
 
 A função usa uma capacidade aleatória por formulário, armazenada apenas como hash numa tabela sem acesso público, com validade de 24 horas. Repetições na mesma sessão não duplicam leads nem a conclusão. Recarregar a página inicia outra sessão; o lead parcial anterior permanece salvo. O token não concede leitura do CRM. A proteção antispam continua pendente.
 
+## Deploy no Coolify
+
+Use o build pack **Dockerfile** (porta 80). Configure `VITE_SUPABASE_URL` e `VITE_SUPABASE_PUBLISHABLE_KEY` como variáveis de build. Passo a passo, healthcheck e validação: [docs/deploy-coolify.md](docs/deploy-coolify.md).
+
 ## SEO e publicação
 
 Domínio canônico confirmado: https://tonyspaintingmv.com. Atendimento: Massachusetts, New Hampshire, Rhode Island e Martha's Vineyard.
